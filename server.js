@@ -52,7 +52,7 @@ app.post('/api/results', (req, res) => {
 });
 
 app.get('/api/results', (req, res) => {
-    const { period, date } = req.query;
+    const { period, date, dayStartTime, weekStartDay } = req.query;
     let query = `SELECT * FROM results`;
     let params = [];
     
@@ -60,18 +60,41 @@ app.get('/api/results', (req, res) => {
         const startDate = new Date(date);
         let endDate = new Date(date);
         
+        // Parse user settings with defaults
+        const dayStart = parseInt(dayStartTime) || 0;
+        const weekStart = parseInt(weekStartDay) || 1;
+        
         switch (period) {
             case 'day':
+                // Start at user's day start time
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'week':
+                // Calculate week start based on user setting
+                const dayOfWeek = startDate.getDay();
+                const daysFromWeekStart = (dayOfWeek - weekStart + 7) % 7;
+                startDate.setDate(startDate.getDate() - daysFromWeekStart);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 7);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'month':
+                // Start of month at user's day start time
+                startDate.setDate(1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setMonth(startDate.getMonth() + 1);
+                endDate.setDate(1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'year':
+                // Start of year at user's day start time
+                startDate.setMonth(0, 1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setFullYear(startDate.getFullYear() + 1);
+                endDate.setMonth(0, 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
         }
         
@@ -125,7 +148,7 @@ app.delete('/api/results/:id', (req, res) => {
 });
 
 app.get('/api/summary', (req, res) => {
-    const { period, date } = req.query;
+    const { period, date, dayStartTime, weekStartDay } = req.query;
     let query = `SELECT club_name, 
                         COUNT(*) as sessions,
                         SUM(result) as total_result,
@@ -139,18 +162,41 @@ app.get('/api/summary', (req, res) => {
         const startDate = new Date(date);
         let endDate = new Date(date);
         
+        // Parse user settings with defaults
+        const dayStart = parseInt(dayStartTime) || 0;
+        const weekStart = parseInt(weekStartDay) || 1;
+        
         switch (period) {
             case 'day':
+                // Start at user's day start time
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'week':
+                // Calculate week start based on user setting
+                const dayOfWeek = startDate.getDay();
+                const daysFromWeekStart = (dayOfWeek - weekStart + 7) % 7;
+                startDate.setDate(startDate.getDate() - daysFromWeekStart);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 7);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'month':
+                // Start of month at user's day start time
+                startDate.setDate(1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setMonth(startDate.getMonth() + 1);
+                endDate.setDate(1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'year':
+                // Start of year at user's day start time
+                startDate.setMonth(0, 1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setFullYear(startDate.getFullYear() + 1);
+                endDate.setMonth(0, 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
         }
         
