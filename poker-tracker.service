@@ -1,0 +1,19 @@
+[Unit]
+Description=Poker Tracker Keepalive
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/Poker-Tracker-WebUI
+ExecStart=/Poker-Tracker-WebUI/keepalive.sh run
+ExecStop=/Poker-Tracker-WebUI/keepalive.sh stop
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

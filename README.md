@@ -39,12 +39,41 @@ npm start
 
 The application will be available at `http://your-server-ip:80`
 
+### Keep App Running (Auto-restart)
+To automatically start the app on boot and restart it if it crashes:
+
+```bash
+# Setup auto-restart service
+sudo ./setup-keepalive.sh
+```
+
+This will:
+- Install a systemd service that starts on boot
+- Monitor the app and restart it if it crashes
+- Automatically restart after container reboots
+
+### Manual Control
+```bash
+# Check if app is running
+./keepalive.sh status
+
+# Start the app with monitoring
+./keepalive.sh run
+
+# Restart the app
+./keepalive.sh restart
+
+# Control the service
+sudo systemctl status poker-tracker
+sudo systemctl restart poker-tracker
+```
+
 ### After Updates
 When you pull new changes:
 ```bash
 git pull
 npm install  # Rebuilds native modules for Ubuntu
-npm start
+sudo systemctl restart poker-tracker  # Restart service
 ```
 
 ## Usage
