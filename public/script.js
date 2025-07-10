@@ -86,7 +86,17 @@ class PokerTracker {
             if (response.ok) {
                 const result = await response.json();
                 console.log('Success response:', result);
+                
+                // Preserve club and account values, only reset result and update datetime
+                const clubName = document.getElementById('clubName').value;
+                const accountName = document.getElementById('accountName').value;
+                
                 e.target.reset();
+                
+                // Restore club and account values
+                document.getElementById('clubName').value = clubName;
+                document.getElementById('accountName').value = accountName;
+                
                 this.setCurrentDateTime();
                 this.saveToLocalStorage(data.club_name, data.account_name);
                 this.loadData();
@@ -152,7 +162,8 @@ class PokerTracker {
     async loadData() {
         await Promise.all([
             this.loadResults(),
-            this.loadSummary()
+            this.loadSummary(),
+            this.loadPeriodSpecificEntries()
         ]);
     }
 
@@ -176,6 +187,16 @@ class PokerTracker {
         }
     }
 
+    async loadPeriodSpecificEntries() {
+        try {
+            const response = await fetch(`/api/results?period=${this.currentPeriod}&date=${this.currentDate}`);
+            const results = await response.json();
+            this.updatePeriodSpecificAutocomplete(results);
+        } catch (error) {
+            console.error('Error loading period-specific entries:', error);
+        }
+    }
+
     renderResults(results) {
         const container = document.getElementById('resultsList');
         
@@ -189,17 +210,16 @@ class PokerTracker {
             return;
         }
 
-        container.innerHTML = results.slice(0, 10).map(result => `
-            <div class="result-item ${result.result >= 0 ? 'positive' : 'negative'}">
-                <div class="result-details clickable" onclick="pokerTracker.fillFromPreviousResult({id: ${result.id}, club_name: '${result.club_name}', account_name: '${result.account_name}'})">
-                    <h4>${result.club_name} - ${result.account_name}</h4>
-                    <p>${new Date(result.date_time).toLocaleDateString()}</p>
-                </div>
-                <div class="result-value ${result.result >= 0 ? 'positive' : 'negative'}">
+        container.innerHTML = results.slice(0, 12).map(result => `
+            <div class="result-row clickable" onclick="pokerTracker.fillFromPreviousResult({id: ${result.id}, club_name: '${result.club_name}', account_name: '${result.account_name}'})">
+                <div class="result-club">${result.club_name}</div>
+                <div class="result-account">${result.account_name}</div>
+                <div class="result-date">${new Date(result.date_time).toLocaleDateString()}</div>
+                <div class="result-amount ${result.result >= 0 ? 'positive' : 'negative'}">
                     ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
                 </div>
                 <div class="result-actions">
-                    <button class="btn-edit" onclick="pokerTracker.editResult(${result.id})">Edit</button>
+                    <button class="btn-edit" onclick="pokerTracker.editResult(${result.id}); event.stopPropagation();">Edit</button>
                 </div>
             </div>
         `).join('');
@@ -218,7 +238,30 @@ class PokerTracker {
             return;
         }
 
-        container.innerHTML = summary.map(club => `
+        // Calculate overall totals
+        const overallTotal = summary.reduce((sum, club) => sum + club.total_result, 0);
+        const overallSessions = summary.reduce((sum, club) => sum + club.sessions, 0);
+
+        // Create overall summary card + individual club cards
+        const overallCard = `
+            <div class="summary-card overall-summary">
+                <h3>Overall Total</h3>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <div class="stat-label">Total</div>
+                        <div class="stat-value ${overallTotal >= 0 ? 'positive' : 'negative'}">
+                            ${overallTotal >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(overallTotal).toFixed(0)}
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Sessions</div>
+                        <div class="stat-value">${overallSessions}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const clubCards = summary.map(club => `
             <div class="summary-card">
                 <h3>${club.club_name}</h3>
                 <div class="summary-stats">
@@ -229,14 +272,34 @@ class PokerTracker {
                         </div>
                     </div>
                     <div class="stat">
-                        <div class="stat-label">Avg</div>
-                        <div class="stat-value ${club.avg_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.avg_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.avg_result).toFixed(0)}
-                        </div>
+                        <div class="stat-label">Sessions</div>
+                        <div class="stat-value">${club.sessions}</div>
                     </div>
                 </div>
             </div>
         `).join('');
+
+        container.innerHTML = overallCard + clubCards;
+    }
+
+    updatePeriodSpecificAutocomplete(results) {
+        // Extract unique clubs and accounts from current period results
+        const periodClubs = [...new Set(results.map(r => r.club_name))];
+        const periodAccounts = [...new Set(results.map(r => r.account_name))];
+        
+        // Get existing clubs/accounts from localStorage (all time)
+        const allClubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
+        const allAccounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
+        
+        // Combine and remove duplicates - prioritize current period entries
+        const combinedClubs = [...new Set([...periodClubs, ...allClubs])];
+        const combinedAccounts = [...new Set([...periodAccounts, ...allAccounts])];
+        
+        // Update autocomplete with combined data
+        this.updateAutocomplete('clubName', combinedClubs);
+        this.updateAutocomplete('accountName', combinedAccounts);
+        this.updateAutocomplete('editClubName', combinedClubs);
+        this.updateAutocomplete('editAccountName', combinedAccounts);
     }
 
     async editResult(id) {
@@ -364,6 +427,7 @@ class PokerTracker {
         document.getElementById('accountName').value = result.account_name;
         document.getElementById('result').focus();
     }
+
 
     loadSettings() {
         const defaultSettings = {

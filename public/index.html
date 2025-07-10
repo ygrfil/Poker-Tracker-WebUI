@@ -53,13 +53,13 @@
             </div>
 
             <div class="right-panel">
-                <section class="period-section">
-                    <div class="period-controls">
+                <div class="period-bar">
+                    <div class="period-nav">
                         <button id="prevPeriod" class="btn-nav" title="Previous">‹</button>
-                        <div class="period-display">
-                            <span id="currentPeriodRange">Today</span>
-                        </div>
                         <button id="nextPeriod" class="btn-nav" title="Next">›</button>
+                    </div>
+                    <div class="period-display">
+                        <span id="currentPeriodRange">Today</span>
                     </div>
                     <div class="period-filters">
                         <button class="btn btn-filter active" data-period="day">Day</button>
@@ -67,20 +67,26 @@
                         <button class="btn btn-filter" data-period="month">Month</button>
                         <button class="btn btn-filter" data-period="year">Year</button>
                     </div>
-                </section>
+                </div>
 
-                <section class="summary-section">
+                <div class="summary-bar">
                     <div id="summaryCards" class="summary-cards">
                         <!-- Summary cards will be populated by JavaScript -->
                     </div>
-                </section>
+                </div>
 
-                <section class="results-section">
-                    <h3>Recent Results</h3>
-                    <div id="resultsList" class="results-list">
+                <div class="results-table-container">
+                    <div class="results-table-header">
+                        <div class="header-club">Club</div>
+                        <div class="header-account">Account</div>
+                        <div class="header-date">Date</div>
+                        <div class="header-amount">Amount</div>
+                        <div class="header-actions">Actions</div>
+                    </div>
+                    <div id="resultsList" class="results-table-body">
                         <!-- Results will be populated by JavaScript -->
                     </div>
-                </section>
+                </div>
             </div>
         </main>
     </div>
