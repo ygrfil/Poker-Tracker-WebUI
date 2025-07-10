@@ -32,6 +32,12 @@ class PokerTracker {
         document.getElementById('settingsForm').addEventListener('submit', this.handleSettingsSubmit.bind(this));
         document.getElementById('resetSettings').addEventListener('click', this.resetSettings.bind(this));
         
+        // Backup/Restore functionality
+        document.getElementById('backupBtn').addEventListener('click', this.downloadBackup.bind(this));
+        document.getElementById('restoreBtn').addEventListener('click', this.chooseRestoreFile.bind(this));
+        document.getElementById('restoreFile').addEventListener('change', this.handleRestoreFileSelect.bind(this));
+        document.getElementById('confirmRestoreBtn').addEventListener('click', this.confirmRestore.bind(this));
+        
         // Period navigation
         document.getElementById('prevPeriod').addEventListener('click', this.navigatePeriod.bind(this, -1));
         document.getElementById('nextPeriod').addEventListener('click', this.navigatePeriod.bind(this, 1));
@@ -169,7 +175,13 @@ class PokerTracker {
 
     async loadResults() {
         try {
-            const response = await fetch(`/api/results?period=${this.currentPeriod}&date=${this.currentDate}`);
+            const params = new URLSearchParams({
+                period: this.currentPeriod,
+                date: this.currentDate,
+                dayStartTime: this.settings.dayStartTime,
+                weekStartDay: this.settings.weekStartDay
+            });
+            const response = await fetch(`/api/results?${params}`);
             const results = await response.json();
             this.renderResults(results);
         } catch (error) {
@@ -179,7 +191,13 @@ class PokerTracker {
 
     async loadSummary() {
         try {
-            const response = await fetch(`/api/summary?period=${this.currentPeriod}&date=${this.currentDate}`);
+            const params = new URLSearchParams({
+                period: this.currentPeriod,
+                date: this.currentDate,
+                dayStartTime: this.settings.dayStartTime,
+                weekStartDay: this.settings.weekStartDay
+            });
+            const response = await fetch(`/api/summary?${params}`);
             const summary = await response.json();
             this.renderSummary(summary);
         } catch (error) {
@@ -189,7 +207,13 @@ class PokerTracker {
 
     async loadPeriodSpecificEntries() {
         try {
-            const response = await fetch(`/api/results?period=${this.currentPeriod}&date=${this.currentDate}`);
+            const params = new URLSearchParams({
+                period: this.currentPeriod,
+                date: this.currentDate,
+                dayStartTime: this.settings.dayStartTime,
+                weekStartDay: this.settings.weekStartDay
+            });
+            const response = await fetch(`/api/results?${params}`);
             const results = await response.json();
             this.updatePeriodSpecificAutocomplete(results);
         } catch (error) {
@@ -283,17 +307,43 @@ class PokerTracker {
     }
 
     updatePeriodSpecificAutocomplete(results) {
-        // Extract unique clubs and accounts from current period results
-        const periodClubs = [...new Set(results.map(r => r.club_name))];
-        const periodAccounts = [...new Set(results.map(r => r.account_name))];
+        // Create maps to track most recent usage
+        const clubUsage = new Map();
+        const accountUsage = new Map();
+        
+        // Sort results by date (most recent first) and track usage
+        results.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+        
+        results.forEach((result, index) => {
+            if (!clubUsage.has(result.club_name)) {
+                clubUsage.set(result.club_name, index); // Lower index = more recent
+            }
+            if (!accountUsage.has(result.account_name)) {
+                accountUsage.set(result.account_name, index);
+            }
+        });
         
         // Get existing clubs/accounts from localStorage (all time)
         const allClubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
         const allAccounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
         
-        // Combine and remove duplicates - prioritize current period entries
-        const combinedClubs = [...new Set([...periodClubs, ...allClubs])];
-        const combinedAccounts = [...new Set([...periodAccounts, ...allAccounts])];
+        // Sort period clubs by most recent usage
+        const periodClubs = Array.from(clubUsage.keys()).sort((a, b) => {
+            return clubUsage.get(a) - clubUsage.get(b);
+        });
+        
+        // Sort period accounts by most recent usage
+        const periodAccounts = Array.from(accountUsage.keys()).sort((a, b) => {
+            return accountUsage.get(a) - accountUsage.get(b);
+        });
+        
+        // Add localStorage entries that aren't in current period (alphabetically sorted)
+        const extraClubs = allClubs.filter(club => !clubUsage.has(club)).sort();
+        const extraAccounts = allAccounts.filter(acc => !accountUsage.has(acc)).sort();
+        
+        // Combine: period entries first (by recency), then extras (alphabetically)
+        const combinedClubs = [...periodClubs, ...extraClubs];
+        const combinedAccounts = [...periodAccounts, ...extraAccounts];
         
         // Update autocomplete with combined data
         this.updateAutocomplete('clubName', combinedClubs);
@@ -561,6 +611,81 @@ class PokerTracker {
         const d = new Date(date);
         d.setHours(this.settings.dayStartTime, 0, 0, 0);
         return d;
+    }
+
+    async downloadBackup() {
+        try {
+            const response = await fetch('/api/backup');
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `poker-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                this.showNotification('Backup downloaded successfully!', 'success');
+            } else {
+                const error = await response.json();
+                this.showNotification(error.error || 'Failed to create backup', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Network error occurred', 'error');
+        }
+    }
+
+    chooseRestoreFile() {
+        document.getElementById('restoreFile').click();
+    }
+
+    handleRestoreFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('confirmRestoreBtn').style.display = 'inline-block';
+            document.getElementById('confirmRestoreBtn').textContent = `Restore from ${file.name}`;
+        }
+    }
+
+    async confirmRestore() {
+        const fileInput = document.getElementById('restoreFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            this.showNotification('Please select a backup file first', 'error');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to restore from backup? This will replace ALL current data and cannot be undone!')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('backup', file);
+            
+            const response = await fetch('/api/restore', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.showNotification(`Database restored successfully! ${result.restored_records} records restored.`, 'success');
+                
+                // Reset UI and reload data
+                fileInput.value = '';
+                document.getElementById('confirmRestoreBtn').style.display = 'none';
+                this.closeSettingsModal();
+                this.loadData();
+            } else {
+                const error = await response.json();
+                this.showNotification(error.error || 'Failed to restore backup', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Network error occurred', 'error');
+        }
     }
 }
 

@@ -1,0 +1,24 @@
+[Unit]
+Description=Poker Tracker Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/Poker-Tracker-WebUI
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+# Restart service if it crashes
+StartLimitInterval=60s
+StartLimitBurst=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=poker-tracker
+
+[Install]
+WantedBy=multi-user.target

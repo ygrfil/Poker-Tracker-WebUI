@@ -2,6 +2,8 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 const PORT = 80;
@@ -9,6 +11,9 @@ const PORT = 80;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
 
 const db = new sqlite3.Database('./database/poker.db', (err) => {
     if (err) {
@@ -47,7 +52,7 @@ app.post('/api/results', (req, res) => {
 });
 
 app.get('/api/results', (req, res) => {
-    const { period, date } = req.query;
+    const { period, date, dayStartTime, weekStartDay } = req.query;
     let query = `SELECT * FROM results`;
     let params = [];
     
@@ -55,18 +60,41 @@ app.get('/api/results', (req, res) => {
         const startDate = new Date(date);
         let endDate = new Date(date);
         
+        // Parse user settings with defaults
+        const dayStart = parseInt(dayStartTime) || 0;
+        const weekStart = parseInt(weekStartDay) || 1;
+        
         switch (period) {
             case 'day':
+                // Set to user's day start time
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'week':
+                // Calculate week start based on user setting
+                const dayOfWeek = startDate.getDay();
+                const daysFromWeekStart = (dayOfWeek - weekStart + 7) % 7;
+                startDate.setDate(startDate.getDate() - daysFromWeekStart);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 7);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'month':
+                // Start of month
+                startDate.setDate(1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setMonth(startDate.getMonth() + 1);
+                endDate.setDate(1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'year':
+                // Start of year
+                startDate.setMonth(0, 1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setFullYear(startDate.getFullYear() + 1);
+                endDate.setMonth(0, 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
         }
         
@@ -120,7 +148,7 @@ app.delete('/api/results/:id', (req, res) => {
 });
 
 app.get('/api/summary', (req, res) => {
-    const { period, date } = req.query;
+    const { period, date, dayStartTime, weekStartDay } = req.query;
     let query = `SELECT club_name, 
                         COUNT(*) as sessions,
                         SUM(result) as total_result,
@@ -134,18 +162,41 @@ app.get('/api/summary', (req, res) => {
         const startDate = new Date(date);
         let endDate = new Date(date);
         
+        // Parse user settings with defaults
+        const dayStart = parseInt(dayStartTime) || 0;
+        const weekStart = parseInt(weekStartDay) || 1;
+        
         switch (period) {
             case 'day':
+                // Set to user's day start time
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'week':
+                // Calculate week start based on user setting
+                const dayOfWeek = startDate.getDay();
+                const daysFromWeekStart = (dayOfWeek - weekStart + 7) % 7;
+                startDate.setDate(startDate.getDate() - daysFromWeekStart);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setDate(startDate.getDate() + 7);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'month':
+                // Start of month
+                startDate.setDate(1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setMonth(startDate.getMonth() + 1);
+                endDate.setDate(1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
             case 'year':
+                // Start of year
+                startDate.setMonth(0, 1);
+                startDate.setHours(dayStart, 0, 0, 0);
                 endDate.setFullYear(startDate.getFullYear() + 1);
+                endDate.setMonth(0, 1);
+                endDate.setHours(dayStart, 0, 0, 0);
                 break;
         }
         
@@ -161,6 +212,89 @@ app.get('/api/summary', (req, res) => {
         }
         res.json(rows);
     });
+});
+
+// Database backup endpoint
+app.get('/api/backup', (req, res) => {
+    const query = `SELECT * FROM results ORDER BY date_time DESC`;
+    
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to backup database: ' + err.message });
+        }
+        
+        const backup = {
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            data: rows
+        };
+        
+        const filename = `poker-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.json(backup);
+    });
+});
+
+// Database restore endpoint
+app.post('/api/restore', upload.single('backup'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No backup file provided' });
+    }
+    
+    try {
+        const fileContent = fs.readFileSync(req.file.path, 'utf8');
+        const backup = JSON.parse(fileContent);
+        
+        // Validate backup format
+        if (!backup.data || !Array.isArray(backup.data)) {
+            return res.status(400).json({ error: 'Invalid backup file format' });
+        }
+        
+        // Clear existing data and restore
+        db.serialize(() => {
+            db.run('DELETE FROM results', (err) => {
+                if (err) {
+                    return res.status(500).json({ error: 'Failed to clear existing data: ' + err.message });
+                }
+                
+                // Insert restored data
+                const insertQuery = `INSERT INTO results (club_name, account_name, result, date_time) VALUES (?, ?, ?, ?)`;
+                const stmt = db.prepare(insertQuery);
+                
+                let insertedCount = 0;
+                backup.data.forEach((row) => {
+                    stmt.run([row.club_name, row.account_name, row.result, row.date_time], (err) => {
+                        if (err) {
+                            console.error('Error inserting row:', err);
+                        } else {
+                            insertedCount++;
+                        }
+                    });
+                });
+                
+                stmt.finalize((err) => {
+                    // Clean up uploaded file
+                    fs.unlinkSync(req.file.path);
+                    
+                    if (err) {
+                        return res.status(500).json({ error: 'Failed to restore data: ' + err.message });
+                    }
+                    
+                    res.json({ 
+                        message: 'Database restored successfully', 
+                        restored_records: backup.data.length 
+                    });
+                });
+            });
+        });
+        
+    } catch (error) {
+        // Clean up uploaded file on error
+        fs.unlinkSync(req.file.path);
+        res.status(400).json({ error: 'Failed to parse backup file: ' + error.message });
+    }
 });
 
 app.get('/', (req, res) => {

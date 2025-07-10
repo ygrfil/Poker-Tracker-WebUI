@@ -177,6 +177,23 @@
                         </div>
                     </div>
                 </div>
+                <div class="settings-section">
+                    <h3>Database Management</h3>
+                    <div class="backup-restore-section">
+                        <div class="backup-section">
+                            <label>Backup Database</label>
+                            <p class="help-text">Download a backup of all your poker results</p>
+                            <button type="button" class="btn btn-secondary" id="backupBtn">Download Backup</button>
+                        </div>
+                        <div class="restore-section">
+                            <label>Restore Database</label>
+                            <p class="help-text">Upload a backup file to restore your data (WARNING: This will replace all current data)</p>
+                            <input type="file" id="restoreFile" accept=".json" style="display: none;">
+                            <button type="button" class="btn btn-secondary" id="restoreBtn">Choose Backup File</button>
+                            <button type="button" class="btn btn-danger" id="confirmRestoreBtn" style="display: none;">Confirm Restore</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Save Settings</button>
                     <button type="button" class="btn btn-secondary" id="resetSettings">Reset to Default</button>
