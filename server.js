@@ -33,6 +33,16 @@ function initializeDatabase() {
         date_time TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    
+    // Add performance index for date_time queries
+    db.run(`CREATE INDEX IF NOT EXISTS idx_results_datetime 
+            ON results(date_time DESC)`, (err) => {
+        if (err) {
+            console.error('Error creating index:', err.message);
+        } else {
+            console.log('Database index on date_time created/verified.');
+        }
+    });
 }
 
 app.post('/api/results', (req, res) => {

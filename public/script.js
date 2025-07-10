@@ -3,6 +3,7 @@ class PokerTracker {
         this.currentPeriod = 'month';
         this.currentDate = new Date().toISOString().split('T')[0];
         this.settings = this.loadSettings();
+        this.autocompleteCache = null; // Cache for autocomplete optimization
         this.init();
     }
 
@@ -154,6 +155,7 @@ class PokerTracker {
 
     handleDateFilter(e) {
         this.currentDate = e.target.value;
+        this.autocompleteCache = null; // Invalidate cache on date change
         this.loadData();
     }
 
@@ -161,19 +163,12 @@ class PokerTracker {
         document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         this.currentPeriod = e.target.dataset.period;
+        this.autocompleteCache = null; // Invalidate cache on period change
         this.updatePeriodDisplay();
         this.loadData();
     }
 
     async loadData() {
-        await Promise.all([
-            this.loadResults(),
-            this.loadSummary(),
-            this.loadPeriodSpecificEntries()
-        ]);
-    }
-
-    async loadResults() {
         try {
             const params = new URLSearchParams({
                 period: this.currentPeriod,
@@ -181,45 +176,25 @@ class PokerTracker {
                 dayStartTime: this.settings.dayStartTime,
                 weekStartDay: this.settings.weekStartDay
             });
-            const response = await fetch(`/api/results?${params}`);
-            const results = await response.json();
+            
+            // Consolidate to 2 API calls instead of 3
+            const [results, summary] = await Promise.all([
+                fetch(`/api/results?${params}`).then(r => r.json()),
+                fetch(`/api/summary?${params}`).then(r => r.json())
+            ]);
+            
+            // Render data
             this.renderResults(results);
-        } catch (error) {
-            console.error('Error loading results:', error);
-        }
-    }
-
-    async loadSummary() {
-        try {
-            const params = new URLSearchParams({
-                period: this.currentPeriod,
-                date: this.currentDate,
-                dayStartTime: this.settings.dayStartTime,
-                weekStartDay: this.settings.weekStartDay
-            });
-            const response = await fetch(`/api/summary?${params}`);
-            const summary = await response.json();
             this.renderSummary(summary);
+            
+            // Reuse results data for autocomplete (eliminates 3rd API call)
+            this.updatePeriodSpecificAutocomplete(results);
+            
         } catch (error) {
-            console.error('Error loading summary:', error);
+            console.error('Error loading data:', error);
         }
     }
 
-    async loadPeriodSpecificEntries() {
-        try {
-            const params = new URLSearchParams({
-                period: this.currentPeriod,
-                date: this.currentDate,
-                dayStartTime: this.settings.dayStartTime,
-                weekStartDay: this.settings.weekStartDay
-            });
-            const response = await fetch(`/api/results?${params}`);
-            const results = await response.json();
-            this.updatePeriodSpecificAutocomplete(results);
-        } catch (error) {
-            console.error('Error loading period-specific entries:', error);
-        }
-    }
 
     renderResults(results) {
         const container = document.getElementById('resultsList');
@@ -307,13 +282,18 @@ class PokerTracker {
     }
 
     updatePeriodSpecificAutocomplete(results) {
+        // Create cache key to avoid reprocessing same data
+        const cacheKey = `${this.currentPeriod}-${this.currentDate}-${results.length}`;
+        if (this.autocompleteCache?.key === cacheKey) {
+            return; // Skip if same data already processed
+        }
+        
         // Create maps to track most recent usage
         const clubUsage = new Map();
         const accountUsage = new Map();
         
-        // Sort results by date (most recent first) and track usage
-        results.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
-        
+        // Results are already sorted by date DESC from SQL query - no need to re-sort
+        // Single pass through results to track usage
         results.forEach((result, index) => {
             if (!clubUsage.has(result.club_name)) {
                 clubUsage.set(result.club_name, index); // Lower index = more recent
@@ -344,6 +324,13 @@ class PokerTracker {
         // Combine: period entries first (by recency), then extras (alphabetically)
         const combinedClubs = [...periodClubs, ...extraClubs];
         const combinedAccounts = [...periodAccounts, ...extraAccounts];
+        
+        // Cache the result
+        this.autocompleteCache = { 
+            key: cacheKey, 
+            clubs: combinedClubs, 
+            accounts: combinedAccounts 
+        };
         
         // Update autocomplete with combined data
         this.updateAutocomplete('clubName', combinedClubs);
@@ -558,6 +545,7 @@ class PokerTracker {
         }
         
         this.currentDate = currentDate.toISOString().split('T')[0];
+        this.autocompleteCache = null; // Invalidate cache on navigation
         document.getElementById('filterDate').value = this.currentDate;
         this.loadData();
         this.updatePeriodDisplay();
