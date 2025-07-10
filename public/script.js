@@ -175,13 +175,7 @@ class PokerTracker {
 
     async loadResults() {
         try {
-            const params = new URLSearchParams({
-                period: this.currentPeriod,
-                date: this.currentDate,
-                dayStartTime: this.settings.dayStartTime,
-                weekStartDay: this.settings.weekStartDay
-            });
-            const response = await fetch(`/api/results?${params}`);
+            const response = await fetch(`/api/results?period=${this.currentPeriod}&date=${this.currentDate}`);
             const results = await response.json();
             this.renderResults(results);
         } catch (error) {
@@ -191,13 +185,7 @@ class PokerTracker {
 
     async loadSummary() {
         try {
-            const params = new URLSearchParams({
-                period: this.currentPeriod,
-                date: this.currentDate,
-                dayStartTime: this.settings.dayStartTime,
-                weekStartDay: this.settings.weekStartDay
-            });
-            const response = await fetch(`/api/summary?${params}`);
+            const response = await fetch(`/api/summary?period=${this.currentPeriod}&date=${this.currentDate}`);
             const summary = await response.json();
             this.renderSummary(summary);
         } catch (error) {
@@ -207,13 +195,7 @@ class PokerTracker {
 
     async loadPeriodSpecificEntries() {
         try {
-            const params = new URLSearchParams({
-                period: this.currentPeriod,
-                date: this.currentDate,
-                dayStartTime: this.settings.dayStartTime,
-                weekStartDay: this.settings.weekStartDay
-            });
-            const response = await fetch(`/api/results?${params}`);
+            const response = await fetch(`/api/results?period=${this.currentPeriod}&date=${this.currentDate}`);
             const results = await response.json();
             this.updatePeriodSpecificAutocomplete(results);
         } catch (error) {
