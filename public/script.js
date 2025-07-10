@@ -10,6 +10,7 @@ class PokerTracker {
         this.setCurrentDateTime();
         this.setFilterDate();
         this.loadData();
+        this.loadPreviousEntries();
     }
 
     setupEventListeners() {
@@ -51,6 +52,13 @@ class PokerTracker {
             date_time: new Date(formData.get('dateTime')).toISOString()
         };
 
+        console.log('Submitting form data:', data);
+
+        if (!data.club_name || !data.account_name || isNaN(data.result) || !data.date_time) {
+            this.showNotification('Please fill in all fields correctly', 'error');
+            return;
+        }
+
         try {
             const response = await fetch('/api/results', {
                 method: 'POST',
@@ -60,17 +68,24 @@ class PokerTracker {
                 body: JSON.stringify(data)
             });
 
+            console.log('Response status:', response.status);
+
             if (response.ok) {
+                const result = await response.json();
+                console.log('Success response:', result);
                 e.target.reset();
                 this.setCurrentDateTime();
+                this.saveToLocalStorage(data.club_name, data.account_name);
                 this.loadData();
                 this.showNotification('Result added successfully!', 'success');
             } else {
                 const error = await response.json();
+                console.error('Error response:', error);
                 this.showNotification(error.error || 'Failed to add result', 'error');
             }
         } catch (error) {
-            this.showNotification('Network error occurred', 'error');
+            console.error('Network error:', error);
+            this.showNotification('Network error: ' + error.message, 'error');
         }
     }
 
@@ -162,9 +177,10 @@ class PokerTracker {
 
         container.innerHTML = results.map(result => `
             <div class="result-item ${result.result >= 0 ? 'positive' : 'negative'}">
-                <div class="result-details">
+                <div class="result-details clickable" onclick="pokerTracker.fillFromPreviousResult({id: ${result.id}, club_name: '${result.club_name}', account_name: '${result.account_name}'})">
                     <h4>${result.club_name} - ${result.account_name}</h4>
                     <p>${new Date(result.date_time).toLocaleString()}</p>
+                    <small class="click-hint">Click to fill form</small>
                 </div>
                 <div class="result-value ${result.result >= 0 ? 'positive' : 'negative'}">
                     ${result.result >= 0 ? '+' : ''}${result.result.toFixed(2)}
@@ -293,6 +309,57 @@ class PokerTracker {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
+    }
+
+    saveToLocalStorage(clubName, accountName) {
+        let clubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
+        let accounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
+        
+        if (!clubs.includes(clubName)) {
+            clubs.push(clubName);
+            localStorage.setItem('poker_clubs', JSON.stringify(clubs));
+        }
+        
+        if (!accounts.includes(accountName)) {
+            accounts.push(accountName);
+            localStorage.setItem('poker_accounts', JSON.stringify(accounts));
+        }
+    }
+
+    loadPreviousEntries() {
+        const clubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
+        const accounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
+        
+        this.updateAutocomplete('clubName', clubs);
+        this.updateAutocomplete('accountName', accounts);
+        this.updateAutocomplete('editClubName', clubs);
+        this.updateAutocomplete('editAccountName', accounts);
+    }
+
+    updateAutocomplete(inputId, options) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        
+        let datalist = document.getElementById(inputId + '_datalist');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = inputId + '_datalist';
+            input.parentNode.appendChild(datalist);
+            input.setAttribute('list', datalist.id);
+        }
+        
+        datalist.innerHTML = '';
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option;
+            datalist.appendChild(optionElement);
+        });
+    }
+
+    fillFromPreviousResult(result) {
+        document.getElementById('clubName').value = result.club_name;
+        document.getElementById('accountName').value = result.account_name;
+        document.getElementById('result').focus();
     }
 }
 
