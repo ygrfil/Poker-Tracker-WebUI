@@ -1,6 +1,6 @@
 class PokerTracker {
     constructor() {
-        this.currentPeriod = 'day';
+        this.currentPeriod = 'month';
         this.currentDate = new Date().toISOString().split('T')[0];
         this.settings = this.loadSettings();
         this.init();
