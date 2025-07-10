@@ -14,16 +14,16 @@
         </header>
 
         <main class="main">
-            <aside class="sidebar">
+            <div class="left-panel">
                 <section class="add-result-section">
-                    <h2>Add New Result</h2>
+                    <h3>Add Result</h3>
                     <form id="resultForm" class="result-form">
                         <div class="form-group">
-                            <label for="clubName">Club Name</label>
+                            <label for="clubName">Club</label>
                             <input type="text" id="clubName" name="clubName" required>
                         </div>
                         <div class="form-group">
-                            <label for="accountName">Account Name</label>
+                            <label for="accountName">Account</label>
                             <input type="text" id="accountName" name="accountName" required>
                         </div>
                         <div class="form-group">
@@ -34,14 +34,14 @@
                             <label for="dateTime">Date & Time</label>
                             <input type="datetime-local" id="dateTime" name="dateTime" required>
                         </div>
-                        <button type="submit" class="btn btn-primary">Add Result</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
                     </form>
                 </section>
 
                 <section class="settings-section">
                     <div class="settings-header">
-                        <h2>Settings</h2>
-                        <button id="settingsBtn" class="btn-settings" title="Open Settings">⚙️</button>
+                        <h3>Settings</h3>
+                        <button id="settingsBtn" class="btn-settings" title="Settings">⚙️</button>
                     </div>
                     <div class="quick-filters">
                         <div class="filter-group">
@@ -50,35 +50,33 @@
                         </div>
                     </div>
                 </section>
-            </aside>
+            </div>
 
-            <div class="main-content">
+            <div class="right-panel">
+                <section class="period-section">
+                    <div class="period-controls">
+                        <button id="prevPeriod" class="btn-nav" title="Previous">‹</button>
+                        <div class="period-display">
+                            <span id="currentPeriodRange">Today</span>
+                        </div>
+                        <button id="nextPeriod" class="btn-nav" title="Next">›</button>
+                    </div>
+                    <div class="period-filters">
+                        <button class="btn btn-filter active" data-period="day">Day</button>
+                        <button class="btn btn-filter" data-period="week">Week</button>
+                        <button class="btn btn-filter" data-period="month">Month</button>
+                        <button class="btn btn-filter" data-period="year">Year</button>
+                    </div>
+                </section>
+
                 <section class="summary-section">
-                    <h2>Summary</h2>
                     <div id="summaryCards" class="summary-cards">
                         <!-- Summary cards will be populated by JavaScript -->
                     </div>
                 </section>
 
                 <section class="results-section">
-                    <div class="results-header">
-                        <h2>Recent Results</h2>
-                        <div class="period-controls">
-                            <button id="prevPeriod" class="btn-nav" title="Previous Period">‹</button>
-                            <div class="period-display">
-                                <span id="currentPeriodRange">Today</span>
-                            </div>
-                            <button id="nextPeriod" class="btn-nav" title="Next Period">›</button>
-                        </div>
-                    </div>
-                    <div class="period-filters">
-                        <div class="filter-buttons">
-                            <button class="btn btn-filter active" data-period="day">Day</button>
-                            <button class="btn btn-filter" data-period="week">Week</button>
-                            <button class="btn btn-filter" data-period="month">Month</button>
-                            <button class="btn btn-filter" data-period="year">Year</button>
-                        </div>
-                    </div>
+                    <h3>Recent Results</h3>
                     <div id="resultsList" class="results-list">
                         <!-- Results will be populated by JavaScript -->
                     </div>

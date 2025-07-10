@@ -189,12 +189,11 @@ class PokerTracker {
             return;
         }
 
-        container.innerHTML = results.map(result => `
+        container.innerHTML = results.slice(0, 10).map(result => `
             <div class="result-item ${result.result >= 0 ? 'positive' : 'negative'}">
                 <div class="result-details clickable" onclick="pokerTracker.fillFromPreviousResult({id: ${result.id}, club_name: '${result.club_name}', account_name: '${result.account_name}'})">
                     <h4>${result.club_name} - ${result.account_name}</h4>
-                    <p>${new Date(result.date_time).toLocaleString()}</p>
-                    <small class="click-hint">Click to fill form</small>
+                    <p>${new Date(result.date_time).toLocaleDateString()}</p>
                 </div>
                 <div class="result-value ${result.result >= 0 ? 'positive' : 'negative'}">
                     ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
@@ -226,23 +225,13 @@ class PokerTracker {
                     <div class="stat">
                         <div class="stat-label">Total</div>
                         <div class="stat-value ${club.total_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.total_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.total_result).toFixed(2)}
+                            ${club.total_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.total_result).toFixed(0)}
                         </div>
                     </div>
                     <div class="stat">
-                        <div class="stat-label">Sessions</div>
-                        <div class="stat-value">${club.sessions}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Average</div>
+                        <div class="stat-label">Avg</div>
                         <div class="stat-value ${club.avg_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.avg_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.avg_result).toFixed(2)}
-                        </div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Best</div>
-                        <div class="stat-value ${club.best_session >= 0 ? 'positive' : 'negative'}">
-                            ${club.best_session >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.best_session).toFixed(2)}
+                            ${club.avg_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.avg_result).toFixed(0)}
                         </div>
                     </div>
                 </div>
