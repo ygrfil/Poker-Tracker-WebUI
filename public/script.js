@@ -2,6 +2,7 @@ class PokerTracker {
     constructor() {
         this.currentPeriod = 'day';
         this.currentDate = new Date().toISOString().split('T')[0];
+        this.settings = this.loadSettings();
         this.init();
     }
 
@@ -9,6 +10,7 @@ class PokerTracker {
         this.setupEventListeners();
         this.setCurrentDateTime();
         this.setFilterDate();
+        this.updatePeriodDisplay();
         this.loadData();
         this.loadPreviousEntries();
     }
@@ -24,9 +26,20 @@ class PokerTracker {
 
         document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
         
+        // Settings modal
+        document.getElementById('settingsBtn').addEventListener('click', this.openSettingsModal.bind(this));
+        document.getElementById('settingsClose').addEventListener('click', this.closeSettingsModal.bind(this));
+        document.getElementById('settingsForm').addEventListener('submit', this.handleSettingsSubmit.bind(this));
+        document.getElementById('resetSettings').addEventListener('click', this.resetSettings.bind(this));
+        
+        // Period navigation
+        document.getElementById('prevPeriod').addEventListener('click', this.navigatePeriod.bind(this, -1));
+        document.getElementById('nextPeriod').addEventListener('click', this.navigatePeriod.bind(this, 1));
+        
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 this.closeModal();
+                this.closeSettingsModal();
             }
         });
     }
@@ -132,6 +145,7 @@ class PokerTracker {
         document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         this.currentPeriod = e.target.dataset.period;
+        this.updatePeriodDisplay();
         this.loadData();
     }
 
@@ -183,7 +197,7 @@ class PokerTracker {
                     <small class="click-hint">Click to fill form</small>
                 </div>
                 <div class="result-value ${result.result >= 0 ? 'positive' : 'negative'}">
-                    ${result.result >= 0 ? '+' : ''}${result.result.toFixed(2)}
+                    ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
                 </div>
                 <div class="result-actions">
                     <button class="btn-edit" onclick="pokerTracker.editResult(${result.id})">Edit</button>
@@ -212,7 +226,7 @@ class PokerTracker {
                     <div class="stat">
                         <div class="stat-label">Total</div>
                         <div class="stat-value ${club.total_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.total_result >= 0 ? '+' : ''}${club.total_result.toFixed(2)}
+                            ${club.total_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.total_result).toFixed(2)}
                         </div>
                     </div>
                     <div class="stat">
@@ -222,13 +236,13 @@ class PokerTracker {
                     <div class="stat">
                         <div class="stat-label">Average</div>
                         <div class="stat-value ${club.avg_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.avg_result >= 0 ? '+' : ''}${club.avg_result.toFixed(2)}
+                            ${club.avg_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.avg_result).toFixed(2)}
                         </div>
                     </div>
                     <div class="stat">
                         <div class="stat-label">Best</div>
                         <div class="stat-value ${club.best_session >= 0 ? 'positive' : 'negative'}">
-                            ${club.best_session >= 0 ? '+' : ''}${club.best_session.toFixed(2)}
+                            ${club.best_session >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.best_session).toFixed(2)}
                         </div>
                     </div>
                 </div>
@@ -360,6 +374,140 @@ class PokerTracker {
         document.getElementById('clubName').value = result.club_name;
         document.getElementById('accountName').value = result.account_name;
         document.getElementById('result').focus();
+    }
+
+    loadSettings() {
+        const defaultSettings = {
+            dayStartTime: 0, // 12 AM
+            weekStartDay: 1, // Monday
+            dateFormat: 'default',
+            currencySymbol: '$'
+        };
+        return JSON.parse(localStorage.getItem('poker_settings') || JSON.stringify(defaultSettings));
+    }
+
+    saveSettings(settings) {
+        this.settings = settings;
+        localStorage.setItem('poker_settings', JSON.stringify(settings));
+    }
+
+    openSettingsModal() {
+        // Populate form with current settings
+        document.getElementById('dayStartTime').value = this.settings.dayStartTime;
+        document.getElementById('weekStartDay').value = this.settings.weekStartDay;
+        document.getElementById('dateFormat').value = this.settings.dateFormat;
+        document.getElementById('currencySymbol').value = this.settings.currencySymbol;
+        
+        document.getElementById('settingsModal').style.display = 'block';
+    }
+
+    closeSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    handleSettingsSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const settings = {
+            dayStartTime: parseInt(formData.get('dayStartTime')),
+            weekStartDay: parseInt(formData.get('weekStartDay')),
+            dateFormat: formData.get('dateFormat'),
+            currencySymbol: formData.get('currencySymbol')
+        };
+        
+        this.saveSettings(settings);
+        this.closeSettingsModal();
+        this.loadData(); // Refresh data with new settings
+        this.updatePeriodDisplay();
+        this.showNotification('Settings saved successfully!', 'success');
+    }
+
+    resetSettings() {
+        const defaultSettings = {
+            dayStartTime: 0,
+            weekStartDay: 1,
+            dateFormat: 'default',
+            currencySymbol: '$'
+        };
+        this.saveSettings(defaultSettings);
+        this.openSettingsModal(); // Refresh the form
+        this.loadData();
+        this.updatePeriodDisplay();
+        this.showNotification('Settings reset to default', 'success');
+    }
+
+    navigatePeriod(direction) {
+        const currentDate = new Date(this.currentDate);
+        
+        switch (this.currentPeriod) {
+            case 'day':
+                currentDate.setDate(currentDate.getDate() + direction);
+                break;
+            case 'week':
+                currentDate.setDate(currentDate.getDate() + (7 * direction));
+                break;
+            case 'month':
+                currentDate.setMonth(currentDate.getMonth() + direction);
+                break;
+            case 'year':
+                currentDate.setFullYear(currentDate.getFullYear() + direction);
+                break;
+        }
+        
+        this.currentDate = currentDate.toISOString().split('T')[0];
+        document.getElementById('filterDate').value = this.currentDate;
+        this.loadData();
+        this.updatePeriodDisplay();
+    }
+
+    updatePeriodDisplay() {
+        const currentDate = new Date(this.currentDate);
+        const displayElement = document.getElementById('currentPeriodRange');
+        
+        let displayText = '';
+        switch (this.currentPeriod) {
+            case 'day':
+                displayText = this.formatDate(currentDate);
+                break;
+            case 'week':
+                const weekStart = this.getWeekStart(currentDate);
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                displayText = `${this.formatDate(weekStart)} - ${this.formatDate(weekEnd)}`;
+                break;
+            case 'month':
+                displayText = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                break;
+            case 'year':
+                displayText = currentDate.getFullYear().toString();
+                break;
+        }
+        
+        displayElement.textContent = displayText;
+    }
+
+    getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + this.settings.weekStartDay;
+        return new Date(d.setDate(diff));
+    }
+
+    formatDate(date) {
+        switch (this.settings.dateFormat) {
+            case 'iso':
+                return date.toISOString().split('T')[0];
+            case 'european':
+                return date.toLocaleDateString('en-GB');
+            default:
+                return date.toLocaleDateString('en-US');
+        }
+    }
+
+    getDayStart(date) {
+        const d = new Date(date);
+        d.setHours(this.settings.dayStartTime, 0, 0, 0);
+        return d;
     }
 }
 
