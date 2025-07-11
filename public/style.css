@@ -615,6 +615,14 @@ select:focus {
     text-align: center;
 }
 
+.result-amount.positive {
+    color: var(--positive);
+}
+
+.result-amount.negative {
+    color: var(--negative);
+}
+
 .result-actions {
     text-align: center;
 }
