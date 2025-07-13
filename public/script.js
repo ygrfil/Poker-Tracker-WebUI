@@ -4,6 +4,8 @@ class PokerTracker {
         this.currentDate = new Date().toISOString().split('T')[0];
         this.settings = this.loadSettings();
         this.autocompleteCache = null; // Cache for autocomplete optimization
+        this.lastResultsHash = null; // Cache for DOM rendering optimization
+        this.lastSummaryHash = null; // Cache for summary rendering optimization
         this.init();
     }
 
@@ -162,6 +164,8 @@ class PokerTracker {
     handleDateFilter(e) {
         this.currentDate = e.target.value;
         this.autocompleteCache = null; // Invalidate cache on date change
+        this.lastResultsHash = null; // Invalidate DOM cache
+        this.lastSummaryHash = null; // Invalidate DOM cache
         this.loadData();
     }
 
@@ -170,6 +174,8 @@ class PokerTracker {
         e.target.classList.add('active');
         this.currentPeriod = e.target.dataset.period;
         this.autocompleteCache = null; // Invalidate cache on period change
+        this.lastResultsHash = null; // Invalidate DOM cache
+        this.lastSummaryHash = null; // Invalidate DOM cache
         this.updatePeriodDisplay();
         this.loadData();
     }
@@ -204,34 +210,73 @@ class PokerTracker {
 
     renderResults(results) {
         const container = document.getElementById('resultsList');
+        const newResults = results.slice(0, 12);
         
-        if (results.length === 0) {
+        // Create hash for change detection
+        const newHash = this.hashResults(newResults);
+        if (this.lastResultsHash === newHash) {
+            return; // No changes, skip DOM update
+        }
+        
+        if (newResults.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>No results found</h3>
                     <p>Add your first poker result to get started</p>
                 </div>
             `;
+            this.lastResultsHash = newHash;
             return;
         }
 
-        container.innerHTML = results.slice(0, 12).map(result => `
-            <div class="result-row clickable" onclick="pokerTracker.fillFromPreviousResult({id: ${result.id}, club_name: '${result.club_name}', account_name: '${result.account_name}'})">
-                <div class="result-club">${result.club_name}</div>
-                <div class="result-account">${result.account_name}</div>
-                <div class="result-date">${new Date(result.date_time).toLocaleDateString()}</div>
-                <div class="result-amount ${result.result >= 0 ? 'positive' : 'negative'}">
-                    ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
-                </div>
-                <div class="result-actions">
-                    <button class="btn-edit" onclick="pokerTracker.editResult(${result.id}); event.stopPropagation();">Edit</button>
-                </div>
+        // Use DocumentFragment for efficient batch DOM updates
+        const fragment = document.createDocumentFragment();
+        newResults.forEach(result => {
+            const row = this.createResultRow(result);
+            fragment.appendChild(row);
+        });
+        
+        container.replaceChildren(fragment);
+        this.lastResultsHash = newHash;
+    }
+
+    createResultRow(result) {
+        const row = document.createElement('div');
+        row.className = 'result-row clickable';
+        row.onclick = () => this.fillFromPreviousResult({
+            id: result.id, 
+            club_name: result.club_name, 
+            account_name: result.account_name
+        });
+        
+        row.innerHTML = `
+            <div class="result-club">${result.club_name}</div>
+            <div class="result-account">${result.account_name}</div>
+            <div class="result-date">${new Date(result.date_time).toLocaleDateString()}</div>
+            <div class="result-amount ${result.result >= 0 ? 'positive' : 'negative'}">
+                ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
             </div>
-        `).join('');
+            <div class="result-actions">
+                <button class="btn-edit" onclick="pokerTracker.editResult(${result.id}); event.stopPropagation();">Edit</button>
+            </div>
+        `;
+        
+        return row;
+    }
+
+    hashResults(results) {
+        // Simple hash function for change detection
+        return results.map(r => `${r.id}-${r.result}-${r.date_time}`).join('|');
     }
 
     renderSummary(summary) {
         const container = document.getElementById('summaryCards');
+        
+        // Create hash for change detection
+        const newHash = this.hashSummary(summary);
+        if (this.lastSummaryHash === newHash) {
+            return; // No changes, skip DOM update
+        }
         
         if (summary.length === 0) {
             container.innerHTML = `
@@ -240,40 +285,66 @@ class PokerTracker {
                     <p>Add some results to see your summary</p>
                 </div>
             `;
+            this.lastSummaryHash = newHash;
             return;
         }
 
         // Calculate overall total using commission-adjusted amounts
         const overallTotal = summary.reduce((sum, club) => sum + club.adjusted_total, 0);
 
-        // Create overall summary card + individual club cards
-        const overallCard = `
-            <div class="summary-card overall-summary">
-                <h3>Overall Total</h3>
-                <div class="summary-stats">
-                    <div class="stat">
-                        <div class="stat-value ${overallTotal >= 0 ? 'positive' : 'negative'}">
-                            ${overallTotal >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(overallTotal).toFixed(0)}
-                        </div>
+        // Use DocumentFragment for efficient batch DOM updates
+        const fragment = document.createDocumentFragment();
+        
+        // Create overall summary card
+        const overallCard = this.createOverallSummaryCard(overallTotal);
+        fragment.appendChild(overallCard);
+        
+        // Create club cards
+        summary.forEach(club => {
+            const clubCard = this.createClubCard(club);
+            fragment.appendChild(clubCard);
+        });
+
+        container.replaceChildren(fragment);
+        this.lastSummaryHash = newHash;
+    }
+
+    createOverallSummaryCard(overallTotal) {
+        const card = document.createElement('div');
+        card.className = 'summary-card overall-summary';
+        card.innerHTML = `
+            <h3>Overall Total</h3>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-value ${overallTotal >= 0 ? 'positive' : 'negative'}">
+                        ${overallTotal >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(overallTotal).toFixed(0)}
                     </div>
                 </div>
             </div>
         `;
+        return card;
+    }
 
-        const clubCards = summary.map(club => `
-            <div class="summary-card club-card clickable" onclick="pokerTracker.openCommissionModal('${club.club_name}', ${club.commission_percentage || 0})">
-                <h3>${club.club_name} ${club.commission_percentage > 0 ? `(${club.commission_percentage}%)` : ''}</h3>
-                <div class="summary-stats">
-                    <div class="stat">
-                        <div class="stat-value ${club.adjusted_total >= 0 ? 'positive' : 'negative'}">
-                            ${club.adjusted_total >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.adjusted_total).toFixed(0)}
-                        </div>
+    createClubCard(club) {
+        const card = document.createElement('div');
+        card.className = 'summary-card club-card clickable';
+        card.onclick = () => this.openCommissionModal(club.club_name, club.commission_percentage || 0);
+        card.innerHTML = `
+            <h3>${club.club_name} ${club.commission_percentage > 0 ? `(${club.commission_percentage}%)` : ''}</h3>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-value ${club.adjusted_total >= 0 ? 'positive' : 'negative'}">
+                        ${club.adjusted_total >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.adjusted_total).toFixed(0)}
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        return card;
+    }
 
-        container.innerHTML = overallCard + clubCards;
+    hashSummary(summary) {
+        // Simple hash function for change detection
+        return summary.map(s => `${s.club_name}-${s.adjusted_total}-${s.commission_percentage}`).join('|');
     }
 
     updatePeriodSpecificAutocomplete(results) {
@@ -541,6 +612,8 @@ class PokerTracker {
         
         this.currentDate = currentDate.toISOString().split('T')[0];
         this.autocompleteCache = null; // Invalidate cache on navigation
+        this.lastResultsHash = null; // Invalidate DOM cache
+        this.lastSummaryHash = null; // Invalidate DOM cache
         document.getElementById('filterDate').value = this.currentDate;
         this.loadData();
         this.updatePeriodDisplay();

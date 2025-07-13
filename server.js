@@ -46,13 +46,23 @@ function initializeDatabase() {
         }
     });
     
-    // Add performance index for date_time queries
+    // Add performance indexes
     db.run(`CREATE INDEX IF NOT EXISTS idx_results_datetime 
             ON results(date_time DESC)`, (err) => {
         if (err) {
-            console.error('Error creating index:', err.message);
+            console.error('Error creating date_time index:', err.message);
         } else {
             console.log('Database index on date_time created/verified.');
+        }
+    });
+
+    // Add compound index for club-specific queries
+    db.run(`CREATE INDEX IF NOT EXISTS idx_results_club_datetime 
+            ON results(club_name, date_time DESC)`, (err) => {
+        if (err) {
+            console.error('Error creating club_datetime index:', err.message);
+        } else {
+            console.log('Database compound index on club_name+date_time created/verified.');
         }
     });
 }
@@ -172,10 +182,12 @@ app.delete('/api/results/:id', (req, res) => {
 app.get('/api/summary', (req, res) => {
     const { period, date, dayStartTime, weekStartDay } = req.query;
     
-    // Build the base query to get results with commission rates
-    let query = `SELECT r.club_name, 
-                        r.result,
-                        COALESCE(c.commission_percentage, 0) as commission_percentage
+    // Optimized query with SQL aggregation
+    let query = `SELECT 
+                    r.club_name,
+                    COALESCE(c.commission_percentage, 0) as commission_percentage,
+                    SUM(r.result) as total_result,
+                    SUM(r.result * (1 - COALESCE(c.commission_percentage, 0) / 100.0)) as adjusted_total
                  FROM results r
                  LEFT JOIN club_commissions c ON r.club_name = c.club_name`;
     let params = [];
@@ -226,42 +238,16 @@ app.get('/api/summary', (req, res) => {
         params = [startDate.toISOString(), endDate.toISOString()];
     }
     
-    query += ` ORDER BY r.date_time DESC`;
+    query += ` GROUP BY r.club_name, c.commission_percentage
+               ORDER BY adjusted_total DESC`;
     
     db.all(query, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
         
-        // Group by club and calculate commission-adjusted totals
-        const clubSummaries = {};
-        
-        rows.forEach(row => {
-            const clubName = row.club_name;
-            const originalResult = row.result;
-            const commissionRate = row.commission_percentage;
-            
-            // Calculate commission-adjusted amount
-            // For both wins and losses, commission reduces the absolute amount
-            const adjustedResult = originalResult * (1 - commissionRate / 100);
-            
-            if (!clubSummaries[clubName]) {
-                clubSummaries[clubName] = {
-                    club_name: clubName,
-                    commission_percentage: commissionRate,
-                    total_result: 0,
-                    adjusted_total: 0
-                };
-            }
-            
-            clubSummaries[clubName].total_result += originalResult;
-            clubSummaries[clubName].adjusted_total += adjustedResult;
-        });
-        
-        // Convert to array and sort by adjusted total
-        const result = Object.values(clubSummaries).sort((a, b) => b.adjusted_total - a.adjusted_total);
-        
-        res.json(result);
+        // Data is already aggregated by SQL - just return it
+        res.json(rows);
     });
 });
 
