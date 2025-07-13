@@ -49,6 +49,9 @@ class PokerTracker {
         // Form auto-focus flow
         this.setupFormAutoFocus();
         
+        // Text formatting for inputs
+        this.setupTextFormatting();
+        
         // Event delegation for filter buttons
         document.querySelector('.period-filters').addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-filter')) {
@@ -204,6 +207,19 @@ class PokerTracker {
         // For now, let browser handle default tab order
     }
 
+    // Utility functions for text formatting
+    capitalizeWords(text) {
+        if (!text) return text;
+        return text.split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                  .join(' ');
+    }
+
+    normalizeText(text) {
+        // Normalize text for storage (trim and basic cleanup)
+        return text ? text.trim() : '';
+    }
+
     setupFormAutoFocus() {
         // Auto-focus flow for main form - only on Tab or Enter, not on every keystroke
         this.domCache.clubName.addEventListener('keydown', (e) => {
@@ -245,6 +261,26 @@ class PokerTracker {
         });
     }
 
+    setupTextFormatting() {
+        // Format club and account names with proper capitalization
+        const formatTextInput = (input) => {
+            input.addEventListener('blur', (e) => {
+                const formattedText = this.capitalizeWords(this.normalizeText(e.target.value));
+                e.target.value = formattedText;
+            });
+        };
+
+        // Apply formatting to main form inputs
+        formatTextInput(this.domCache.clubName);
+        formatTextInput(this.domCache.accountName);
+
+        // Apply formatting to edit form inputs
+        const editClubName = document.getElementById('editClubName');
+        const editAccountName = document.getElementById('editAccountName');
+        if (editClubName) formatTextInput(editClubName);
+        if (editAccountName) formatTextInput(editAccountName);
+    }
+
 
     setCurrentDateTime() {
         const now = new Date();
@@ -261,8 +297,8 @@ class PokerTracker {
         
         const formData = new FormData(e.target);
         const data = {
-            club_name: formData.get('clubName'),
-            account_name: formData.get('accountName'),
+            club_name: this.capitalizeWords(this.normalizeText(formData.get('clubName'))),
+            account_name: this.capitalizeWords(this.normalizeText(formData.get('accountName'))),
             result: parseFloat(formData.get('result')),
             date_time: new Date(formData.get('dateTime')).toISOString()
         };
@@ -323,8 +359,8 @@ class PokerTracker {
         const formData = new FormData(e.target);
         const id = formData.get('editId');
         const data = {
-            club_name: formData.get('editClubName'),
-            account_name: formData.get('editAccountName'),
+            club_name: this.capitalizeWords(this.normalizeText(formData.get('editClubName'))),
+            account_name: this.capitalizeWords(this.normalizeText(formData.get('editAccountName'))),
             result: parseFloat(formData.get('editResult')),
             date_time: new Date(formData.get('editDateTime')).toISOString()
         };
@@ -592,9 +628,11 @@ class PokerTracker {
             }
         });
         
-        // Get existing clubs/accounts from localStorage (all time)
-        const allClubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
-        const allAccounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
+        // Get existing clubs/accounts from localStorage (all time) with proper formatting
+        const allClubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]')
+                           .map(club => this.capitalizeWords(club));
+        const allAccounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]')
+                             .map(account => this.capitalizeWords(account));
         
         // Sort period clubs by most recent usage
         const periodClubs = Array.from(clubUsage.keys()).sort((a, b) => {
@@ -720,23 +758,34 @@ class PokerTracker {
     }
 
     saveToLocalStorage(clubName, accountName) {
+        // Normalize names for consistent storage
+        const normalizedClubName = this.capitalizeWords(this.normalizeText(clubName));
+        const normalizedAccountName = this.capitalizeWords(this.normalizeText(accountName));
+        
         let clubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
         let accounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
         
-        if (!clubs.includes(clubName)) {
-            clubs.push(clubName);
+        // Check case-insensitive to avoid duplicates
+        const existingClub = clubs.find(club => club.toLowerCase() === normalizedClubName.toLowerCase());
+        const existingAccount = accounts.find(account => account.toLowerCase() === normalizedAccountName.toLowerCase());
+        
+        if (!existingClub) {
+            clubs.push(normalizedClubName);
             localStorage.setItem('poker_clubs', JSON.stringify(clubs));
         }
         
-        if (!accounts.includes(accountName)) {
-            accounts.push(accountName);
+        if (!existingAccount) {
+            accounts.push(normalizedAccountName);
             localStorage.setItem('poker_accounts', JSON.stringify(accounts));
         }
     }
 
     loadPreviousEntries() {
-        const clubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]');
-        const accounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]');
+        // Load and format stored entries
+        const clubs = JSON.parse(localStorage.getItem('poker_clubs') || '[]')
+                       .map(club => this.capitalizeWords(club));
+        const accounts = JSON.parse(localStorage.getItem('poker_accounts') || '[]')
+                          .map(account => this.capitalizeWords(account));
         
         this.updateAutocomplete('clubName', clubs);
         this.updateAutocomplete('accountName', accounts);
