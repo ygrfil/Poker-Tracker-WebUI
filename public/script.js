@@ -8,6 +8,7 @@ class PokerTracker {
         this.lastSummaryHash = null; // Cache for summary rendering optimization
         this.domCache = {}; // Cache for DOM elements
         this.pendingDOMUpdates = []; // Batch DOM updates
+        this.layoutStrategyCache = new Map(); // Cache for layout strategy optimization
         this.init();
     }
 
@@ -570,49 +571,24 @@ class PokerTracker {
         
         // Use consistent grid layout for all periods, with smart overflow for 19+ clubs
         const layoutStrategy = this.determineLayoutStrategy(summary.length);
+        let overflowSection = null;
         
-        if (layoutStrategy.name === 'hybrid-overflow') {
-            // Split clubs into primary and overflow sections
-            const primaryClubs = sortedSummary.slice(0, layoutStrategy.maxVisibleClubs);
-            const overflowClubs = sortedSummary.slice(layoutStrategy.maxVisibleClubs);
-            
-            // Create primary clubs in standard grid
-            primaryClubs.forEach(club => {
-                const clubCard = this.createClubCard(club);
-                fragment.appendChild(clubCard);
-            });
-            
-            // Create overflow section if there are overflow clubs
-            if (overflowClubs.length > 0) {
-                const overflowSection = document.createElement('div');
-                overflowSection.className = 'overflow-clubs-section';
-                
-                const overflowHeader = document.createElement('div');
-                overflowHeader.className = 'overflow-header';
-                overflowHeader.innerHTML = `
-                    <h4>Additional Clubs (${overflowClubs.length})</h4>
-                    <button class="toggle-overflow" data-expanded="false">Show All</button>
-                `;
-                overflowSection.appendChild(overflowHeader);
-                
-                const overflowContainer = document.createElement('div');
-                overflowContainer.className = 'overflow-container collapsed';
-                overflowClubs.forEach(club => {
-                    const clubCard = this.createClubCard(club);
-                    clubCard.classList.add('overflow-club');
-                    overflowContainer.appendChild(clubCard);
-                });
-                overflowSection.appendChild(overflowContainer);
-                
-                fragment.appendChild(overflowSection);
+        // Single loop for optimal DOM operations
+        sortedSummary.forEach((club, index) => {
+            if (layoutStrategy.name === 'hybrid-overflow' && index >= layoutStrategy.maxVisibleClubs) {
+                // Create overflow section on first overflow club
+                if (!overflowSection) {
+                    overflowSection = this.createOverflowSection(sortedSummary.slice(layoutStrategy.maxVisibleClubs));
+                    fragment.appendChild(overflowSection);
+                }
+                // Skip creating cards here - they'll be lazy loaded
+                return;
             }
-        } else {
-            // Standard grid layout - show all clubs
-            sortedSummary.forEach(club => {
-                const clubCard = this.createClubCard(club);
-                fragment.appendChild(clubCard);
-            });
-        }
+            
+            // Create primary club cards
+            const clubCard = this.createClubCard(club);
+            fragment.appendChild(clubCard);
+        });
 
         container.replaceChildren(fragment);
         
@@ -661,6 +637,30 @@ class PokerTracker {
             </div>
         `;
         return card;
+    }
+
+    createOverflowSection(overflowClubs) {
+        // Create overflow section with header and container
+        const overflowSection = document.createElement('div');
+        overflowSection.className = 'overflow-clubs-section';
+        
+        const overflowHeader = document.createElement('div');
+        overflowHeader.className = 'overflow-header';
+        overflowHeader.innerHTML = `
+            <h4>Additional Clubs (${overflowClubs.length})</h4>
+            <button class="toggle-overflow" data-expanded="false">Show All</button>
+        `;
+        overflowSection.appendChild(overflowHeader);
+        
+        const overflowContainer = document.createElement('div');
+        overflowContainer.className = 'overflow-container collapsed';
+        
+        // Store overflow clubs data for lazy rendering
+        overflowContainer.dataset.overflowClubs = JSON.stringify(overflowClubs);
+        overflowContainer.dataset.lazyLoaded = 'false';
+        
+        overflowSection.appendChild(overflowContainer);
+        return overflowSection;
     }
 
     hashSummary(summary) {
@@ -727,16 +727,23 @@ class PokerTracker {
     }
 
     determineLayoutStrategy(clubCount) {
+        // Check cache first to avoid recalculation
+        const cacheKey = `${clubCount}-${this.currentPeriod}`;
+        if (this.layoutStrategyCache.has(cacheKey)) {
+            return this.layoutStrategyCache.get(cacheKey);
+        }
+
         // Smart layout strategy based on club count and period
+        let strategy;
         if (clubCount <= 12) {
-            return {
+            strategy = {
                 name: 'show-all',
                 showAllWithoutScrolling: true,
                 compactMode: false,
                 maxVisibleClubs: clubCount
             };
         } else if (clubCount <= 18) {
-            return {
+            strategy = {
                 name: 'compact-all',
                 showAllWithoutScrolling: true,
                 compactMode: true,
@@ -745,7 +752,7 @@ class PokerTracker {
         } else {
             // 19+ clubs: Show top clubs + scrollable overflow
             const maxPrimaryClubs = this.currentPeriod === 'day' || this.currentPeriod === 'week' ? 12 : 15;
-            return {
+            strategy = {
                 name: 'hybrid-overflow',
                 showAllWithoutScrolling: false,
                 compactMode: true,
@@ -753,6 +760,15 @@ class PokerTracker {
                 overflowClubs: clubCount - maxPrimaryClubs
             };
         }
+
+        // Cache the strategy and clean old entries if cache grows too large
+        this.layoutStrategyCache.set(cacheKey, strategy);
+        if (this.layoutStrategyCache.size > 20) {
+            const firstKey = this.layoutStrategyCache.keys().next().value;
+            this.layoutStrategyCache.delete(firstKey);
+        }
+
+        return strategy;
     }
 
     calculateOptimalColumns(viewportWidth, clubCount, layoutStrategy) {
@@ -797,7 +813,7 @@ class PokerTracker {
     }
 
     toggleOverflowSection(toggleButton) {
-        // Toggle the overflow section visibility
+        // Toggle the overflow section visibility with lazy loading
         const overflowContainer = toggleButton.closest('.overflow-clubs-section').querySelector('.overflow-container');
         const isExpanded = toggleButton.dataset.expanded === 'true';
         
@@ -808,12 +824,32 @@ class PokerTracker {
             toggleButton.textContent = 'Show All';
             toggleButton.dataset.expanded = 'false';
         } else {
+            // Lazy load overflow clubs on first expand
+            if (overflowContainer.dataset.lazyLoaded === 'false') {
+                this.lazyLoadOverflowClubs(overflowContainer);
+            }
+            
             // Expand
             overflowContainer.classList.remove('collapsed');
             overflowContainer.classList.add('expanded');
             toggleButton.textContent = 'Show Less';
             toggleButton.dataset.expanded = 'true';
         }
+    }
+
+    lazyLoadOverflowClubs(overflowContainer) {
+        // Lazy load overflow club cards
+        const overflowClubs = JSON.parse(overflowContainer.dataset.overflowClubs || '[]');
+        const fragment = document.createDocumentFragment();
+        
+        overflowClubs.forEach(club => {
+            const clubCard = this.createClubCard(club);
+            clubCard.classList.add('overflow-club');
+            fragment.appendChild(clubCard);
+        });
+        
+        overflowContainer.appendChild(fragment);
+        overflowContainer.dataset.lazyLoaded = 'true';
     }
 
     setupResizeHandler() {

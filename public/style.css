@@ -20,6 +20,12 @@
     --shadow-primary: 0 2px 4px rgba(0, 0, 0, 0.2);
     --shadow-secondary: 0 1px 2px rgba(0, 0, 0, 0.1);
     --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.2);
+    
+    /* Responsive layout properties */
+    --card-min-width: clamp(120px, 12vw, 180px);
+    --overflow-card-min-width: clamp(100px, 10vw, 160px);
+    --layout-gap: clamp(4px, 1vw, 12px);
+    --overflow-gap: clamp(4px, 0.8vw, 8px);
 }
 
 * {
@@ -1186,51 +1192,12 @@ textarea:focus {
 /* Responsive Club Layout for Day/Week Views */
 .summary-cards {
     display: grid;
-    gap: 12px;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--layout-gap);
+    grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
     max-height: none; /* Remove height restrictions for day/week views */
 }
 
-/* Adaptive layouts based on period and number of clubs */
-.summary-cards[data-period="day"],
-.summary-cards[data-period="week"] {
-    /* Ensure all clubs fit on screen without scrolling */
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 8px;
-}
-
-/* Responsive breakpoints for club card sizing */
-@media (max-width: 1400px) {
-    .summary-cards[data-period="day"],
-    .summary-cards[data-period="week"] {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 6px;
-    }
-}
-
-@media (max-width: 1200px) {
-    .summary-cards[data-period="day"],
-    .summary-cards[data-period="week"] {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 6px;
-    }
-}
-
-@media (max-width: 900px) {
-    .summary-cards[data-period="day"],
-    .summary-cards[data-period="week"] {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 4px;
-    }
-}
-
-@media (max-width: 600px) {
-    .summary-cards[data-period="day"],
-    .summary-cards[data-period="week"] {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 4px;
-    }
-}
+/* Adaptive layouts - now use fluid CSS custom properties for all periods */
 
 /* Compact card styling for day/week views */
 .summary-cards[data-period="day"] .summary-card:not(.overall-summary),
@@ -1322,23 +1289,27 @@ textarea:focus {
 
 .overflow-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 8px;
-    max-height: 0;
+    grid-template-columns: repeat(auto-fit, minmax(var(--overflow-card-min-width), 1fr));
+    gap: var(--overflow-gap);
+    transform-origin: top;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    will-change: transform, opacity;
     overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
 }
 
 .overflow-container.collapsed {
-    max-height: 0;
+    transform: scaleY(0) translateZ(0);
     opacity: 0;
+    height: 0;
+    padding: 0;
 }
 
 .overflow-container.expanded {
+    transform: scaleY(1) translateZ(0);
+    opacity: 1;
+    height: auto;
     max-height: 300px;
     overflow-y: auto;
-    opacity: 1;
     padding-top: 8px;
 }
 
@@ -1356,19 +1327,7 @@ textarea:focus {
     font-size: 0.85rem;
 }
 
-/* Responsive adjustments for overflow containers */
-@media (max-width: 1200px) {
-    .overflow-container {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
-}
-
-@media (max-width: 900px) {
-    .overflow-container {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 6px;
-    }
-}
+/* Responsive overflow containers now use CSS custom properties for fluid scaling */
 
 /* Ensure smooth transitions when switching periods */
 .summary-cards {
