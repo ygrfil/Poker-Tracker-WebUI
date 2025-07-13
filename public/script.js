@@ -46,6 +46,9 @@ class PokerTracker {
         this.domCache.editForm.addEventListener('submit', this.handleEditResult.bind(this));
         this.domCache.filterDate.addEventListener('change', this.handleDateFilter.bind(this));
         
+        // Form auto-focus flow
+        this.setupFormAutoFocus();
+        
         // Event delegation for filter buttons
         document.querySelector('.period-filters').addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-filter')) {
@@ -111,6 +114,140 @@ class PokerTracker {
                 this.closeCommissionModal();
             }
         });
+
+        // Keyboard navigation
+        this.setupKeyboardNavigation();
+    }
+
+    setupKeyboardNavigation() {
+        document.addEventListener('keydown', (e) => {
+            // Global keyboard shortcuts
+            switch (e.key) {
+                case 'Escape':
+                    // Close any open modals
+                    if (this.domCache.editModal.style.display === 'block') {
+                        this.closeModal();
+                    } else if (this.domCache.settingsModal.style.display === 'block') {
+                        this.closeSettingsModal();
+                    } else if (this.domCache.commissionModal.style.display === 'block') {
+                        this.closeCommissionModal();
+                    }
+                    break;
+
+                case 'ArrowLeft':
+                    if (!this.isInputFocused()) {
+                        e.preventDefault();
+                        this.navigatePeriod(-1);
+                    }
+                    break;
+
+                case 'ArrowRight':
+                    if (!this.isInputFocused()) {
+                        e.preventDefault();
+                        this.navigatePeriod(1);
+                    }
+                    break;
+
+                case 'Enter':
+                    // Submit forms when Enter is pressed from any form field
+                    if (e.target.form) {
+                        e.preventDefault();
+                        e.target.form.dispatchEvent(new Event('submit', { cancelable: true }));
+                    }
+                    break;
+
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                    // Quick period switching with number keys (if not in input)
+                    if (!this.isInputFocused() && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        const periods = ['day', 'week', 'month', 'year'];
+                        const periodIndex = parseInt(e.key) - 1;
+                        if (periods[periodIndex]) {
+                            this.switchToPeriod(periods[periodIndex]);
+                        }
+                    }
+                    break;
+            }
+        });
+
+        // Tab navigation enhancement
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                this.handleTabNavigation(e);
+            }
+        });
+    }
+
+    isInputFocused() {
+        const activeElement = document.activeElement;
+        return activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' || 
+            activeElement.tagName === 'SELECT' ||
+            activeElement.contentEditable === 'true'
+        );
+    }
+
+    switchToPeriod(period) {
+        // Find and click the appropriate period button
+        const periodBtn = document.querySelector(`[data-period="${period}"]`);
+        if (periodBtn && !periodBtn.classList.contains('active')) {
+            periodBtn.click();
+        }
+    }
+
+    handleTabNavigation(e) {
+        // Enhanced tab navigation - could add custom tab order here if needed
+        // For now, let browser handle default tab order
+    }
+
+    setupFormAutoFocus() {
+        // Auto-focus flow for main form
+        this.domCache.clubName.addEventListener('input', (e) => {
+            if (e.target.value.length > 0) {
+                this.scheduleAutoFocus(this.domCache.accountName, 100);
+            }
+        });
+
+        this.domCache.accountName.addEventListener('input', (e) => {
+            if (e.target.value.length > 0) {
+                this.scheduleAutoFocus(this.domCache.result, 100);
+            }
+        });
+
+        // Smart cursor positioning for number fields
+        this.domCache.result.addEventListener('focus', (e) => {
+            // Select all text for easy replacement
+            setTimeout(() => e.target.select(), 0);
+        });
+
+        // Commission percentage field
+        const commissionPercentage = document.getElementById('commissionPercentage');
+        if (commissionPercentage) {
+            commissionPercentage.addEventListener('focus', (e) => {
+                setTimeout(() => e.target.select(), 0);
+            });
+        }
+
+        // Auto-focus to club name when form is reset
+        this.domCache.resultForm.addEventListener('reset', () => {
+            setTimeout(() => this.domCache.clubName.focus(), 0);
+        });
+    }
+
+    scheduleAutoFocus(element, delay = 0) {
+        // Schedule auto-focus with optional delay
+        if (this.autoFocusTimeout) {
+            clearTimeout(this.autoFocusTimeout);
+        }
+        this.autoFocusTimeout = setTimeout(() => {
+            if (element && typeof element.focus === 'function') {
+                element.focus();
+            }
+        }, delay);
     }
 
     setCurrentDateTime() {
@@ -167,6 +304,8 @@ class PokerTracker {
                     this.domCache.clubName.value = clubName;
                     this.domCache.accountName.value = accountName;
                     this.setCurrentDateTime();
+                    // Auto-focus to result field for quick next entry
+                    this.scheduleAutoFocus(this.domCache.result, 100);
                 });
                 this.saveToLocalStorage(data.club_name, data.account_name);
                 this.loadData();
@@ -556,16 +695,32 @@ class PokerTracker {
             color: white;
             font-weight: 600;
             z-index: 1001;
-            animation: slideIn 0.3s ease;
             background: ${type === 'success' ? '#38a169' : type === 'error' ? '#e53e3e' : '#4299e1'};
         `;
 
         document.body.appendChild(notification);
 
+        // Add micro-interaction feedback to related elements
+        this.addFeedbackAnimation(type);
+
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
+    }
+
+    addFeedbackAnimation(type) {
+        // Add visual feedback to the form or relevant element
+        const targetElement = this.domCache.resultForm;
+        if (targetElement) {
+            const feedbackClass = type === 'success' ? 'success-feedback' : 'error-feedback';
+            targetElement.classList.add(feedbackClass);
+            
+            // Remove class after animation completes
+            setTimeout(() => {
+                targetElement.classList.remove(feedbackClass);
+            }, type === 'success' ? 600 : 500);
+        }
     }
 
     saveToLocalStorage(clubName, accountName) {

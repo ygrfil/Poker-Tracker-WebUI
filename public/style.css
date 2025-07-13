@@ -1022,3 +1022,164 @@ select:focus {
     opacity: 0.8;
 }
 
+/* Micro-Interactions Polish */
+
+/* Button press animations */
+.btn,
+.btn-edit,
+.btn-nav,
+.btn-filter,
+.btn-settings {
+    transition: all 0.15s ease;
+    transform: translateY(0);
+}
+
+.btn:active,
+.btn-edit:active,
+.btn-nav:active,
+.btn-filter:active,
+.btn-settings:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover,
+.btn-edit:hover,
+.btn-nav:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced card hover states */
+.summary-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.summary-card.clickable:hover {
+    background-color: var(--bg-secondary);
+    cursor: pointer;
+}
+
+/* Input field focus highlighting */
+input[type="text"],
+input[type="number"],
+input[type="datetime-local"],
+input[type="date"],
+select,
+textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+    background-color: var(--bg-secondary);
+    outline: none;
+}
+
+/* Success/error micro-animations */
+@keyframes successPulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+    20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+.success-feedback {
+    animation: successPulse 0.6s ease-out;
+}
+
+.error-feedback {
+    animation: errorShake 0.5s ease-in-out;
+}
+
+/* Result row hover enhancement */
+.result-row {
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.result-row:hover {
+    background-color: var(--bg-secondary);
+    transform: translateX(2px);
+}
+
+/* Period filter button animations */
+.btn-filter {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-filter::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-filter:hover::before {
+    left: 100%;
+}
+
+/* Modal entrance animations */
+.modal {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal[style*="block"] {
+    opacity: 1;
+}
+
+.modal-content {
+    transform: scale(0.9) translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.modal[style*="block"] .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+/* Notification enhancements */
+.notification {
+    transform: translateX(100%);
+    animation: slideInNotification 0.3s ease forwards;
+}
+
+@keyframes slideInNotification {
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Subtle loading state enhancement */
+.loading-spinner {
+    opacity: 0;
+    animation: fadeInSpin 0.3s ease 0.2s forwards, spin 1s linear 0.2s infinite;
+}
+
+@keyframes fadeInSpin {
+    to {
+        opacity: 1;
+    }
+}
+
