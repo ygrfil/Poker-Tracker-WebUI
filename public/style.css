@@ -1183,3 +1183,128 @@ textarea:focus {
     }
 }
 
+/* Responsive Club Layout for Day/Week Views */
+.summary-cards {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    max-height: none; /* Remove height restrictions for day/week views */
+}
+
+/* Adaptive layouts based on period and number of clubs */
+.summary-cards[data-period="day"],
+.summary-cards[data-period="week"] {
+    /* Ensure all clubs fit on screen without scrolling */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+/* Responsive breakpoints for club card sizing */
+@media (max-width: 1400px) {
+    .summary-cards[data-period="day"],
+    .summary-cards[data-period="week"] {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 6px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .summary-cards[data-period="day"],
+    .summary-cards[data-period="week"] {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 6px;
+    }
+}
+
+@media (max-width: 900px) {
+    .summary-cards[data-period="day"],
+    .summary-cards[data-period="week"] {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 4px;
+    }
+}
+
+@media (max-width: 600px) {
+    .summary-cards[data-period="day"],
+    .summary-cards[data-period="week"] {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 4px;
+    }
+}
+
+/* Compact card styling for day/week views */
+.summary-cards[data-period="day"] .summary-card:not(.overall-summary),
+.summary-cards[data-period="week"] .summary-card:not(.overall-summary) {
+    padding: 8px;
+    min-height: auto;
+}
+
+.summary-cards[data-period="day"] .summary-card h3,
+.summary-cards[data-period="week"] .summary-card h3 {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.summary-cards[data-period="day"] .stat-value,
+.summary-cards[data-period="week"] .stat-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Overall summary card always full width in day/week views */
+.summary-cards[data-period="day"] .overall-summary,
+.summary-cards[data-period="week"] .overall-summary {
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
+}
+
+/* Dynamic grid optimization based on club count */
+.summary-cards[data-club-count="1"] { grid-template-columns: 1fr; }
+.summary-cards[data-club-count="2"] { grid-template-columns: repeat(2, 1fr); }
+.summary-cards[data-club-count="3"] { grid-template-columns: repeat(3, 1fr); }
+.summary-cards[data-club-count="4"] { grid-template-columns: repeat(4, 1fr); }
+.summary-cards[data-club-count="5"] { grid-template-columns: repeat(5, 1fr); }
+.summary-cards[data-club-count="6"] { grid-template-columns: repeat(6, 1fr); }
+
+/* Ensure no more than 6 columns even with many clubs */
+@media (min-width: 1400px) {
+    .summary-cards[data-period="day"],
+    .summary-cards[data-period="week"] {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        max-width: 100%;
+    }
+}
+
+/* Dynamic optimization for day/week views */
+.summary-cards.optimized-layout {
+    grid-template-columns: repeat(var(--optimal-columns, auto-fit), 1fr);
+    height: fit-content;
+    overflow: visible;
+}
+
+/* Ensure smooth transitions when switching periods */
+.summary-cards {
+    transition: grid-template-columns 0.3s ease, gap 0.3s ease;
+}
+
+/* Ultra-compact mode for many clubs on small screens */
+@media (max-width: 480px) {
+    .summary-cards[data-period="day"] .summary-card:not(.overall-summary),
+    .summary-cards[data-period="week"] .summary-card:not(.overall-summary) {
+        padding: 6px;
+        min-height: 50px;
+    }
+    
+    .summary-cards[data-period="day"] .summary-card h3,
+    .summary-cards[data-period="week"] .summary-card h3 {
+        font-size: 0.75rem;
+        margin-bottom: 2px;
+    }
+    
+    .summary-cards[data-period="day"] .stat-value,
+    .summary-cards[data-period="week"] .stat-value {
+        font-size: 0.8rem;
+    }
+}
+

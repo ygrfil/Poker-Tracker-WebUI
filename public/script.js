@@ -120,6 +120,9 @@ class PokerTracker {
 
         // Keyboard navigation
         this.setupKeyboardNavigation();
+        
+        // Window resize optimization
+        this.setupResizeHandler();
     }
 
     setupKeyboardNavigation() {
@@ -540,6 +543,9 @@ class PokerTracker {
                     <p>Add some results to see your summary</p>
                 </div>
             `;
+            // Set data attributes even for empty state
+            container.setAttribute('data-period', this.currentPeriod);
+            container.setAttribute('data-club-count', 0);
             this.lastSummaryHash = newHash;
             return;
         }
@@ -554,13 +560,26 @@ class PokerTracker {
         const overallCard = this.createOverallSummaryCard(overallTotal);
         fragment.appendChild(overallCard);
         
+        // Sort clubs based on current period and proximity to overall result
+        const sortedSummary = this.smartSortClubs(summary, overallTotal);
+        
         // Create club cards
-        summary.forEach(club => {
+        sortedSummary.forEach(club => {
             const clubCard = this.createClubCard(club);
             fragment.appendChild(clubCard);
         });
 
         container.replaceChildren(fragment);
+        
+        // Set data attributes for responsive CSS
+        container.setAttribute('data-period', this.currentPeriod);
+        container.setAttribute('data-club-count', Math.min(summary.length, 6));
+        
+        // Optimize layout for day/week views
+        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+            this.optimizeLayoutForPeriod(container, summary.length);
+        }
+        
         this.lastSummaryHash = newHash;
     }
 
@@ -604,6 +623,105 @@ class PokerTracker {
     hashSummary(summary) {
         // Simple hash function for change detection
         return summary.map(s => `${s.club_name}-${s.adjusted_total}-${s.commission_percentage}`).join('|');
+    }
+
+    smartSortClubs(summary, overallTotal) {
+        // Smart sorting based on period and proximity to overall result
+        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+            // For day/week views: sort by proximity to overall average
+            const averageResult = summary.length > 0 ? overallTotal / summary.length : 0;
+            
+            return summary.sort((a, b) => {
+                // Calculate distance from average (closer = more interesting)
+                const distanceA = Math.abs(a.adjusted_total - averageResult);
+                const distanceB = Math.abs(b.adjusted_total - averageResult);
+                
+                // Secondary sort by absolute value (higher impact first)
+                if (Math.abs(distanceA - distanceB) < 0.01) {
+                    return Math.abs(b.adjusted_total) - Math.abs(a.adjusted_total);
+                }
+                
+                return distanceA - distanceB;
+            });
+        } else {
+            // For month/year views: keep original sorting by total (highest first)
+            return summary.sort((a, b) => b.adjusted_total - a.adjusted_total);
+        }
+    }
+
+    optimizeLayoutForPeriod(container, clubCount) {
+        // Dynamic layout optimization for day/week views
+        const viewport = {
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
+        
+        // Calculate optimal columns based on screen size and club count
+        let optimalColumns = this.calculateOptimalColumns(viewport.width, clubCount);
+        
+        // Ensure all clubs fit without scrolling
+        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+            const availableHeight = this.getAvailableHeight();
+            const cardHeight = this.estimateCardHeight();
+            const maxRows = Math.floor(availableHeight / cardHeight);
+            const maxColumnsForHeight = Math.ceil(clubCount / maxRows);
+            
+            // Use the more restrictive constraint
+            optimalColumns = Math.max(optimalColumns, maxColumnsForHeight);
+        }
+        
+        // Apply dynamic styling
+        container.style.setProperty('--optimal-columns', optimalColumns);
+        container.classList.add('optimized-layout');
+    }
+
+    calculateOptimalColumns(viewportWidth, clubCount) {
+        // Calculate optimal number of columns based on viewport width
+        const minCardWidth = 120; // Minimum readable card width
+        const gap = 8;
+        const padding = 40; // Account for page padding
+        
+        const availableWidth = viewportWidth - padding;
+        const maxColumns = Math.floor(availableWidth / (minCardWidth + gap));
+        
+        // Don't exceed the number of clubs
+        return Math.min(maxColumns, clubCount, 6); // Max 6 columns for readability
+    }
+
+    getAvailableHeight() {
+        // Calculate available height for club cards
+        const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
+        const periodBarHeight = document.querySelector('.period-bar')?.offsetHeight || 0;
+        const overallCardHeight = 80; // Estimated height of overall summary card
+        const padding = 40;
+        
+        return window.innerHeight - headerHeight - periodBarHeight - overallCardHeight - padding;
+    }
+
+    estimateCardHeight() {
+        // Estimate card height based on current period
+        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+            return 60; // Compact cards for day/week
+        }
+        return 80; // Normal cards for month/year
+    }
+
+    setupResizeHandler() {
+        // Debounced resize handler for layout optimization
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Re-optimize layout if in day/week view
+                if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+                    const container = this.domCache.summaryCards;
+                    const clubCount = parseInt(container.getAttribute('data-club-count') || 0);
+                    if (clubCount > 0) {
+                        this.optimizeLayoutForPeriod(container, clubCount);
+                    }
+                }
+            }, 250); // 250ms debounce
+        });
     }
 
     updatePeriodSpecificAutocomplete(results) {
