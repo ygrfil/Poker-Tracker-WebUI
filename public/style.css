@@ -960,3 +960,65 @@ select:focus {
     box-shadow: var(--shadow-hover);
 }
 
+/* Loading States Optimization */
+.loading-container {
+    position: relative;
+    min-height: 200px;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-primary);
+    border-top: 3px solid var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.content-fade {
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.content-fade.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Smooth transitions for dynamic content */
+.results-table-container,
+.summary-cards {
+    transition: opacity 0.2s ease;
+}
+
+.results-table-container.updating,
+.summary-cards.updating {
+    opacity: 0.8;
+}
+

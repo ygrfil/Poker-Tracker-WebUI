@@ -6,10 +6,13 @@ class PokerTracker {
         this.autocompleteCache = null; // Cache for autocomplete optimization
         this.lastResultsHash = null; // Cache for DOM rendering optimization
         this.lastSummaryHash = null; // Cache for summary rendering optimization
+        this.domCache = {}; // Cache for DOM elements
+        this.pendingDOMUpdates = []; // Batch DOM updates
         this.init();
     }
 
     init() {
+        this.cacheDOMElements();
         this.setupEventListeners();
         this.setCurrentDateTime();
         this.setFilterDate();
@@ -18,38 +21,89 @@ class PokerTracker {
         this.loadPreviousEntries();
     }
 
+    cacheDOMElements() {
+        // Cache frequently accessed DOM elements
+        this.domCache = {
+            resultsList: document.getElementById('resultsList'),
+            summaryCards: document.getElementById('summaryCards'),
+            resultForm: document.getElementById('resultForm'),
+            editForm: document.getElementById('editForm'),
+            clubName: document.getElementById('clubName'),
+            accountName: document.getElementById('accountName'),
+            result: document.getElementById('result'),
+            editModal: document.getElementById('editModal'),
+            settingsModal: document.getElementById('settingsModal'),
+            commissionModal: document.getElementById('commissionModal'),
+            filterDate: document.getElementById('filterDate'),
+            summaryLoadingOverlay: document.getElementById('summaryLoadingOverlay'),
+            resultsLoadingOverlay: document.getElementById('resultsLoadingOverlay')
+        };
+    }
+
     setupEventListeners() {
-        document.getElementById('resultForm').addEventListener('submit', this.handleAddResult.bind(this));
-        document.getElementById('editForm').addEventListener('submit', this.handleEditResult.bind(this));
-        document.getElementById('filterDate').addEventListener('change', this.handleDateFilter.bind(this));
+        // Use cached DOM elements for better performance
+        this.domCache.resultForm.addEventListener('submit', this.handleAddResult.bind(this));
+        this.domCache.editForm.addEventListener('submit', this.handleEditResult.bind(this));
+        this.domCache.filterDate.addEventListener('change', this.handleDateFilter.bind(this));
         
-        document.querySelectorAll('.btn-filter').forEach(btn => {
-            btn.addEventListener('click', this.handlePeriodFilter.bind(this));
+        // Event delegation for filter buttons
+        document.querySelector('.period-filters').addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-filter')) {
+                this.handlePeriodFilter(e);
+            }
         });
 
-        document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
+        // Event delegation for modal close buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close')) {
+                if (e.target.closest('#editModal')) this.closeModal();
+                if (e.target.closest('#settingsModal')) this.closeSettingsModal();
+                if (e.target.closest('#commissionModal')) this.closeCommissionModal();
+            }
+        });
         
-        // Settings modal
+        // Event delegation for results list
+        this.domCache.resultsList.addEventListener('click', (e) => {
+            const resultRow = e.target.closest('.result-row');
+            if (resultRow && !e.target.classList.contains('btn-edit')) {
+                const data = JSON.parse(resultRow.dataset.result || '{}');
+                if (data.id) this.fillFromPreviousResult(data);
+            }
+            
+            if (e.target.classList.contains('btn-edit')) {
+                e.stopPropagation();
+                const resultId = parseInt(e.target.dataset.resultId);
+                if (resultId) this.editResult(resultId);
+            }
+        });
+        
+        // Event delegation for summary cards
+        this.domCache.summaryCards.addEventListener('click', (e) => {
+            const clubCard = e.target.closest('.club-card.clickable');
+            if (clubCard) {
+                const clubName = clubCard.dataset.clubName;
+                const commission = parseFloat(clubCard.dataset.commission || 0);
+                this.openCommissionModal(clubName, commission);
+            }
+        });
+        
+        // Cache and bind other elements
         document.getElementById('settingsBtn').addEventListener('click', this.openSettingsModal.bind(this));
-        document.getElementById('settingsClose').addEventListener('click', this.closeSettingsModal.bind(this));
         document.getElementById('settingsForm').addEventListener('submit', this.handleSettingsSubmit.bind(this));
         document.getElementById('resetSettings').addEventListener('click', this.resetSettings.bind(this));
         
-        // Commission modal
-        document.getElementById('commissionClose').addEventListener('click', this.closeCommissionModal.bind(this));
         document.getElementById('commissionForm').addEventListener('submit', this.handleCommissionSubmit.bind(this));
         document.getElementById('commissionPercentage').addEventListener('input', this.updateCommissionPreview.bind(this));
         
-        // Backup/Restore functionality
         document.getElementById('backupBtn').addEventListener('click', this.downloadBackup.bind(this));
         document.getElementById('restoreBtn').addEventListener('click', this.chooseRestoreFile.bind(this));
         document.getElementById('restoreFile').addEventListener('change', this.handleRestoreFileSelect.bind(this));
         document.getElementById('confirmRestoreBtn').addEventListener('click', this.confirmRestore.bind(this));
         
-        // Period navigation
-        document.getElementById('prevPeriod').addEventListener('click', this.navigatePeriod.bind(this, -1));
-        document.getElementById('nextPeriod').addEventListener('click', this.navigatePeriod.bind(this, 1));
+        document.getElementById('prevPeriod').addEventListener('click', () => this.navigatePeriod(-1));
+        document.getElementById('nextPeriod').addEventListener('click', () => this.navigatePeriod(1));
         
+        // Modal backdrop clicks
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 this.closeModal();
@@ -103,16 +157,17 @@ class PokerTracker {
                 console.log('Success response:', result);
                 
                 // Preserve club and account values, only reset result and update datetime
-                const clubName = document.getElementById('clubName').value;
-                const accountName = document.getElementById('accountName').value;
+                const clubName = this.domCache.clubName.value;
+                const accountName = this.domCache.accountName.value;
                 
                 e.target.reset();
                 
-                // Restore club and account values
-                document.getElementById('clubName').value = clubName;
-                document.getElementById('accountName').value = accountName;
-                
-                this.setCurrentDateTime();
+                // Batch DOM updates to prevent layout thrashing
+                this.batchDOMUpdate(() => {
+                    this.domCache.clubName.value = clubName;
+                    this.domCache.accountName.value = accountName;
+                    this.setCurrentDateTime();
+                });
                 this.saveToLocalStorage(data.club_name, data.account_name);
                 this.loadData();
                 this.showNotification('Result added successfully!', 'success');
@@ -181,6 +236,9 @@ class PokerTracker {
     }
 
     async loadData() {
+        // Show loading states without DOM restructuring
+        this.setLoadingState(true);
+        
         try {
             const params = new URLSearchParams({
                 period: this.currentPeriod,
@@ -204,12 +262,36 @@ class PokerTracker {
             
         } catch (error) {
             console.error('Error loading data:', error);
+            this.showNotification('Error loading data', 'error');
+        } finally {
+            // Hide loading with smooth transition
+            this.setLoadingState(false);
+        }
+    }
+
+    setLoadingState(isLoading) {
+        // Use cached DOM elements for better performance
+        const summaryOverlay = this.domCache.summaryLoadingOverlay;
+        const resultsOverlay = this.domCache.resultsLoadingOverlay;
+        const summaryContent = this.domCache.summaryCards;
+        const resultsContent = this.domCache.resultsList;
+        
+        if (isLoading) {
+            summaryOverlay.classList.add('active');
+            resultsOverlay.classList.add('active');
+            summaryContent.classList.add('loading');
+            resultsContent.classList.add('loading');
+        } else {
+            summaryOverlay.classList.remove('active');
+            resultsOverlay.classList.remove('active');
+            summaryContent.classList.remove('loading');
+            resultsContent.classList.remove('loading');
         }
     }
 
 
     renderResults(results) {
-        const container = document.getElementById('resultsList');
+        const container = this.domCache.resultsList;
         const newResults = results.slice(0, 12);
         
         // Create hash for change detection
@@ -243,7 +325,9 @@ class PokerTracker {
     createResultRow(result) {
         const row = document.createElement('div');
         row.className = 'result-row clickable';
-        row.onclick = () => this.fillFromPreviousResult({
+        
+        // Use data attributes instead of inline event handlers
+        row.dataset.result = JSON.stringify({
             id: result.id, 
             club_name: result.club_name, 
             account_name: result.account_name
@@ -257,7 +341,7 @@ class PokerTracker {
                 ${result.result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(result.result).toFixed(2)}
             </div>
             <div class="result-actions">
-                <button class="btn-edit" onclick="pokerTracker.editResult(${result.id}); event.stopPropagation();">Edit</button>
+                <button class="btn-edit" data-result-id="${result.id}">Edit</button>
             </div>
         `;
         
@@ -270,7 +354,7 @@ class PokerTracker {
     }
 
     renderSummary(summary) {
-        const container = document.getElementById('summaryCards');
+        const container = this.domCache.summaryCards;
         
         // Create hash for change detection
         const newHash = this.hashSummary(summary);
@@ -328,7 +412,11 @@ class PokerTracker {
     createClubCard(club) {
         const card = document.createElement('div');
         card.className = 'summary-card club-card clickable';
-        card.onclick = () => this.openCommissionModal(club.club_name, club.commission_percentage || 0);
+        
+        // Use data attributes instead of inline event handlers
+        card.dataset.clubName = club.club_name;
+        card.dataset.commission = club.commission_percentage || 0;
+        
         card.innerHTML = `
             <h3>${club.club_name} ${club.commission_percentage > 0 ? `(${club.commission_percentage}%)` : ''}</h3>
             <div class="summary-stats">
@@ -526,9 +614,26 @@ class PokerTracker {
     }
 
     fillFromPreviousResult(result) {
-        document.getElementById('clubName').value = result.club_name;
-        document.getElementById('accountName').value = result.account_name;
-        document.getElementById('result').focus();
+        // Batch DOM updates to prevent layout thrashing
+        this.batchDOMUpdate(() => {
+            this.domCache.clubName.value = result.club_name;
+            this.domCache.accountName.value = result.account_name;
+            this.domCache.result.focus();
+        });
+    }
+
+    batchDOMUpdate(updateCallback) {
+        // Add update to pending queue
+        this.pendingDOMUpdates.push(updateCallback);
+        
+        // Schedule batch execution if not already scheduled
+        if (this.pendingDOMUpdates.length === 1) {
+            requestAnimationFrame(() => {
+                // Execute all pending updates in a single frame
+                const updates = this.pendingDOMUpdates.splice(0);
+                updates.forEach(update => update());
+            });
+        }
     }
 
 

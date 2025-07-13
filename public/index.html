@@ -70,13 +70,19 @@
                     </div>
                 </div>
 
-                <div class="summary-bar">
-                    <div id="summaryCards" class="summary-cards">
+                <div class="summary-bar loading-container">
+                    <div class="loading-overlay" id="summaryLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <div id="summaryCards" class="summary-cards content-fade">
                         <!-- Summary cards will be populated by JavaScript -->
                     </div>
                 </div>
 
-                <div class="results-table-container">
+                <div class="results-table-container loading-container">
+                    <div class="loading-overlay" id="resultsLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
                     <div class="results-table-header">
                         <div class="header-club">Club</div>
                         <div class="header-account">Account</div>
@@ -84,7 +90,7 @@
                         <div class="header-amount">Amount</div>
                         <div class="header-actions">Actions</div>
                     </div>
-                    <div id="resultsList" class="results-table-body">
+                    <div id="resultsList" class="results-table-body content-fade">
                         <!-- Results will be populated by JavaScript -->
                     </div>
                 </div>
