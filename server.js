@@ -34,6 +34,18 @@ function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     
+    // Create commission table
+    db.run(`CREATE TABLE IF NOT EXISTS club_commissions (
+        club_name TEXT PRIMARY KEY,
+        commission_percentage REAL DEFAULT 0
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating commissions table:', err.message);
+        } else {
+            console.log('Commission table created/verified.');
+        }
+    });
+    
     // Add performance index for date_time queries
     db.run(`CREATE INDEX IF NOT EXISTS idx_results_datetime 
             ON results(date_time DESC)`, (err) => {
@@ -159,13 +171,13 @@ app.delete('/api/results/:id', (req, res) => {
 
 app.get('/api/summary', (req, res) => {
     const { period, date, dayStartTime, weekStartDay } = req.query;
-    let query = `SELECT club_name, 
-                        COUNT(*) as sessions,
-                        SUM(result) as total_result,
-                        AVG(result) as avg_result,
-                        MAX(result) as best_session,
-                        MIN(result) as worst_session
-                 FROM results`;
+    
+    // Build the base query to get results with commission rates
+    let query = `SELECT r.club_name, 
+                        r.result,
+                        COALESCE(c.commission_percentage, 0) as commission_percentage
+                 FROM results r
+                 LEFT JOIN club_commissions c ON r.club_name = c.club_name`;
     let params = [];
     
     if (period && date) {
@@ -210,17 +222,90 @@ app.get('/api/summary', (req, res) => {
                 break;
         }
         
-        query += ` WHERE date_time >= ? AND date_time < ?`;
+        query += ` WHERE r.date_time >= ? AND r.date_time < ?`;
         params = [startDate.toISOString(), endDate.toISOString()];
     }
     
-    query += ` GROUP BY club_name ORDER BY total_result DESC`;
+    query += ` ORDER BY r.date_time DESC`;
     
     db.all(query, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
+        
+        // Group by club and calculate commission-adjusted totals
+        const clubSummaries = {};
+        
+        rows.forEach(row => {
+            const clubName = row.club_name;
+            const originalResult = row.result;
+            const commissionRate = row.commission_percentage;
+            
+            // Calculate commission-adjusted amount
+            // For both wins and losses, commission reduces the absolute amount
+            const adjustedResult = originalResult * (1 - commissionRate / 100);
+            
+            if (!clubSummaries[clubName]) {
+                clubSummaries[clubName] = {
+                    club_name: clubName,
+                    commission_percentage: commissionRate,
+                    total_result: 0,
+                    adjusted_total: 0
+                };
+            }
+            
+            clubSummaries[clubName].total_result += originalResult;
+            clubSummaries[clubName].adjusted_total += adjustedResult;
+        });
+        
+        // Convert to array and sort by adjusted total
+        const result = Object.values(clubSummaries).sort((a, b) => b.adjusted_total - a.adjusted_total);
+        
+        res.json(result);
+    });
+});
+
+// Commission management endpoints
+app.get('/api/commissions', (req, res) => {
+    const query = `SELECT * FROM club_commissions ORDER BY club_name`;
+    
+    db.all(query, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
         res.json(rows);
+    });
+});
+
+app.get('/api/commissions/:clubName', (req, res) => {
+    const { clubName } = req.params;
+    const query = `SELECT * FROM club_commissions WHERE club_name = ?`;
+    
+    db.get(query, [clubName], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(row || { club_name: clubName, commission_percentage: 0 });
+    });
+});
+
+app.post('/api/commissions', (req, res) => {
+    const { club_name, commission_percentage } = req.body;
+    
+    if (!club_name || commission_percentage === undefined) {
+        return res.status(400).json({ error: 'Club name and commission percentage are required' });
+    }
+    
+    if (commission_percentage < 0 || commission_percentage > 100) {
+        return res.status(400).json({ error: 'Commission percentage must be between 0 and 100' });
+    }
+    
+    const query = `INSERT OR REPLACE INTO club_commissions (club_name, commission_percentage) VALUES (?, ?)`;
+    db.run(query, [club_name, commission_percentage], function(err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: 'Commission updated successfully' });
     });
 });
 

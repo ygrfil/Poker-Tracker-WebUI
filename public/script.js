@@ -33,6 +33,11 @@ class PokerTracker {
         document.getElementById('settingsForm').addEventListener('submit', this.handleSettingsSubmit.bind(this));
         document.getElementById('resetSettings').addEventListener('click', this.resetSettings.bind(this));
         
+        // Commission modal
+        document.getElementById('commissionClose').addEventListener('click', this.closeCommissionModal.bind(this));
+        document.getElementById('commissionForm').addEventListener('submit', this.handleCommissionSubmit.bind(this));
+        document.getElementById('commissionPercentage').addEventListener('input', this.updateCommissionPreview.bind(this));
+        
         // Backup/Restore functionality
         document.getElementById('backupBtn').addEventListener('click', this.downloadBackup.bind(this));
         document.getElementById('restoreBtn').addEventListener('click', this.chooseRestoreFile.bind(this));
@@ -47,6 +52,7 @@ class PokerTracker {
             if (e.target.classList.contains('modal')) {
                 this.closeModal();
                 this.closeSettingsModal();
+                this.closeCommissionModal();
             }
         });
     }
@@ -237,9 +243,8 @@ class PokerTracker {
             return;
         }
 
-        // Calculate overall totals
-        const overallTotal = summary.reduce((sum, club) => sum + club.total_result, 0);
-        const overallSessions = summary.reduce((sum, club) => sum + club.sessions, 0);
+        // Calculate overall total using commission-adjusted amounts
+        const overallTotal = summary.reduce((sum, club) => sum + club.adjusted_total, 0);
 
         // Create overall summary card + individual club cards
         const overallCard = `
@@ -247,32 +252,22 @@ class PokerTracker {
                 <h3>Overall Total</h3>
                 <div class="summary-stats">
                     <div class="stat">
-                        <div class="stat-label">Total</div>
                         <div class="stat-value ${overallTotal >= 0 ? 'positive' : 'negative'}">
                             ${overallTotal >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(overallTotal).toFixed(0)}
                         </div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Sessions</div>
-                        <div class="stat-value">${overallSessions}</div>
                     </div>
                 </div>
             </div>
         `;
 
         const clubCards = summary.map(club => `
-            <div class="summary-card">
-                <h3>${club.club_name}</h3>
+            <div class="summary-card club-card clickable" onclick="pokerTracker.openCommissionModal('${club.club_name}', ${club.commission_percentage || 0})">
+                <h3>${club.club_name} ${club.commission_percentage > 0 ? `(${club.commission_percentage}%)` : ''}</h3>
                 <div class="summary-stats">
                     <div class="stat">
-                        <div class="stat-label">Total</div>
-                        <div class="stat-value ${club.total_result >= 0 ? 'positive' : 'negative'}">
-                            ${club.total_result >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.total_result).toFixed(0)}
+                        <div class="stat-value ${club.adjusted_total >= 0 ? 'positive' : 'negative'}">
+                            ${club.adjusted_total >= 0 ? '+' : ''}${this.settings.currencySymbol}${Math.abs(club.adjusted_total).toFixed(0)}
                         </div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Sessions</div>
-                        <div class="stat-value">${club.sessions}</div>
                     </div>
                 </div>
             </div>
@@ -673,6 +668,65 @@ class PokerTracker {
             }
         } catch (error) {
             this.showNotification('Network error occurred', 'error');
+        }
+    }
+
+    openCommissionModal(clubName, currentPercentage) {
+        document.getElementById('commissionClubName').value = clubName;
+        document.getElementById('commissionPercentage').value = currentPercentage;
+        document.getElementById('commissionModal').style.display = 'block';
+        this.updateCommissionPreview();
+    }
+
+    closeCommissionModal() {
+        document.getElementById('commissionModal').style.display = 'none';
+    }
+
+    async handleCommissionSubmit(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = {
+            club_name: formData.get('commissionClubName'),
+            commission_percentage: parseFloat(formData.get('commissionPercentage'))
+        };
+
+        try {
+            const response = await fetch('/api/commissions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                this.closeCommissionModal();
+                this.loadData();
+                this.showNotification(`Commission rate updated for ${data.club_name}!`, 'success');
+            } else {
+                const error = await response.json();
+                this.showNotification(error.error || 'Failed to update commission', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Network error occurred', 'error');
+        }
+    }
+
+    updateCommissionPreview() {
+        const percentage = parseFloat(document.getElementById('commissionPercentage').value) || 0;
+        const previewText = document.getElementById('previewText');
+        
+        if (percentage === 0) {
+            previewText.textContent = 'No commission will be applied';
+        } else {
+            const winExample = 100 * (1 - percentage / 100);
+            const loseExample = -100 * (1 - percentage / 100);
+            previewText.innerHTML = `
+                Examples:<br>
+                Win ${this.settings.currencySymbol}100 → You get ${this.settings.currencySymbol}${winExample.toFixed(2)}<br>
+                Lose ${this.settings.currencySymbol}100 → You lose ${this.settings.currencySymbol}${Math.abs(loseExample).toFixed(2)}
+            `;
         }
     }
 }

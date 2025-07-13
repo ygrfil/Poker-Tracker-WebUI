@@ -203,6 +203,31 @@
         </div>
     </div>
 
+    <!-- Commission Modal -->
+    <div id="commissionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="commissionClose">&times;</span>
+            <h2>Set Commission Rate</h2>
+            <form id="commissionForm">
+                <input type="hidden" id="commissionClubName" name="commissionClubName">
+                <div class="form-group">
+                    <label for="commissionPercentage">Commission Percentage (%):</label>
+                    <input type="number" id="commissionPercentage" name="commissionPercentage" 
+                           min="0" max="100" step="0.1" required>
+                    <small class="help-text">Commission applies to both winnings and losses</small>
+                </div>
+                <div class="commission-preview" id="commissionPreview">
+                    <h4>Commission Impact:</h4>
+                    <p id="previewText">Enter a percentage to see the impact</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Commission Rate</button>
+                    <button type="button" class="btn btn-secondary" onclick="pokerTracker.closeCommissionModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
