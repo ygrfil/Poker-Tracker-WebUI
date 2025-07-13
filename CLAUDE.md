@@ -31,6 +31,11 @@ CREATE TABLE results (
     date_time TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE club_commissions (
+    club_name TEXT PRIMARY KEY,
+    commission_percentage REAL DEFAULT 0
+);
 ```
 
 ## Key API Endpoints
@@ -41,6 +46,11 @@ CREATE TABLE results (
 - `PUT /api/results/:id` - Update existing result  
 - `DELETE /api/results/:id` - Delete result
 - `GET /api/summary?period={period}&date={date}&dayStartTime={hours}&weekStartDay={day}` - Club summaries
+
+### Commission Management
+- `GET /api/commissions` - Get all commission rates
+- `GET /api/commissions/:clubName` - Get commission rate for specific club
+- `POST /api/commissions` - Set commission rate (body: {club_name, commission_percentage})
 
 ### Backup/Restore
 - `GET /api/backup` - Download JSON backup with automatic filename
@@ -55,6 +65,16 @@ The application implements sophisticated period filtering that respects user pre
 - **Period calculations**: All periods (day/week/month/year) use these settings for boundary calculations
 
 Critical: Both `/api/results` and `/api/summary` must receive identical parameters to maintain UI consistency.
+
+## Commission System
+
+The application supports club-specific commission rates that affect displayed totals while preserving original result data:
+
+- **Commission application**: Applied to both winnings and losses using `adjusted_amount = original_amount * (1 - commission_rate/100)`
+- **Data preservation**: Original results in database remain unchanged; commission is applied only for display calculations
+- **UI integration**: Club summary cards are clickable to set commission rates via modal
+- **Summary calculations**: `/api/summary` returns both `total_result` (original) and `adjusted_total` (after commission)
+- **Frontend display**: Club cards show commission percentage in title (e.g., "Club Name (5%)") and use adjusted totals
 
 ## Frontend State Management
 
@@ -119,6 +139,13 @@ The form preserves club and account values after successful submission while res
 
 ### Database Backup/Restore
 Backup creates timestamped JSON files. Restore completely replaces all data (DELETE + INSERT). The uploads directory is automatically cleaned after restore operations.
+
+### Commission System Integration
+When modifying the commission system, maintain these principles:
+- Commission calculations must preserve original data integrity 
+- The `/api/summary` endpoint joins with `club_commissions` table and calculates adjusted totals in JavaScript
+- Frontend commission modal (`openCommissionModal()`) provides real-time preview of commission impact
+- Commission rates are validated (0-100%) and stored per club
 
 ## File Structure Significance
 
