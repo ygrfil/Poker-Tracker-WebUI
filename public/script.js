@@ -205,16 +205,23 @@ class PokerTracker {
     }
 
     setupFormAutoFocus() {
-        // Auto-focus flow for main form
-        this.domCache.clubName.addEventListener('input', (e) => {
-            if (e.target.value.length > 0) {
-                this.scheduleAutoFocus(this.domCache.accountName, 100);
+        // Auto-focus flow for main form - only on Tab or Enter, not on every keystroke
+        this.domCache.clubName.addEventListener('keydown', (e) => {
+            if ((e.key === 'Tab' || e.key === 'Enter') && e.target.value.trim().length > 0) {
+                // Let Tab work naturally, only override Enter
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.domCache.accountName.focus();
+                }
             }
         });
 
-        this.domCache.accountName.addEventListener('input', (e) => {
-            if (e.target.value.length > 0) {
-                this.scheduleAutoFocus(this.domCache.result, 100);
+        this.domCache.accountName.addEventListener('keydown', (e) => {
+            if ((e.key === 'Tab' || e.key === 'Enter') && e.target.value.trim().length > 0) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.domCache.result.focus();
+                }
             }
         });
 
@@ -238,17 +245,6 @@ class PokerTracker {
         });
     }
 
-    scheduleAutoFocus(element, delay = 0) {
-        // Schedule auto-focus with optional delay
-        if (this.autoFocusTimeout) {
-            clearTimeout(this.autoFocusTimeout);
-        }
-        this.autoFocusTimeout = setTimeout(() => {
-            if (element && typeof element.focus === 'function') {
-                element.focus();
-            }
-        }, delay);
-    }
 
     setCurrentDateTime() {
         const now = new Date();
@@ -305,7 +301,7 @@ class PokerTracker {
                     this.domCache.accountName.value = accountName;
                     this.setCurrentDateTime();
                     // Auto-focus to result field for quick next entry
-                    this.scheduleAutoFocus(this.domCache.result, 100);
+                    setTimeout(() => this.domCache.result.focus(), 100);
                 });
                 this.saveToLocalStorage(data.club_name, data.account_name);
                 this.loadData();
