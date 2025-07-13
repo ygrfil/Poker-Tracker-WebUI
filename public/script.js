@@ -568,7 +568,7 @@ class PokerTracker {
         // Sort clubs based on current period and proximity to overall result
         const sortedSummary = this.smartSortClubs(summary, overallTotal);
         
-        // Handle hybrid layout for 15+ clubs
+        // Use consistent grid layout for all periods, with smart overflow for 19+ clubs
         const layoutStrategy = this.determineLayoutStrategy(summary.length);
         
         if (layoutStrategy.name === 'hybrid-overflow') {
@@ -576,14 +576,11 @@ class PokerTracker {
             const primaryClubs = sortedSummary.slice(0, layoutStrategy.maxVisibleClubs);
             const overflowClubs = sortedSummary.slice(layoutStrategy.maxVisibleClubs);
             
-            // Create primary clubs section
-            const primarySection = document.createElement('div');
-            primarySection.className = 'primary-clubs-section';
+            // Create primary clubs in standard grid
             primaryClubs.forEach(club => {
                 const clubCard = this.createClubCard(club);
-                primarySection.appendChild(clubCard);
+                fragment.appendChild(clubCard);
             });
-            fragment.appendChild(primarySection);
             
             // Create overflow section if there are overflow clubs
             if (overflowClubs.length > 0) {
@@ -610,7 +607,7 @@ class PokerTracker {
                 fragment.appendChild(overflowSection);
             }
         } else {
-            // Standard layout - show all clubs
+            // Standard grid layout - show all clubs
             sortedSummary.forEach(club => {
                 const clubCard = this.createClubCard(club);
                 fragment.appendChild(clubCard);
@@ -719,16 +716,9 @@ class PokerTracker {
             optimalColumns = Math.max(optimalColumns, maxColumnsForHeight);
         }
         
-        // Apply dynamic styling based on strategy
-        if (layoutStrategy.name !== 'hybrid-overflow') {
-            // For non-hybrid layouts, apply grid optimization to main container
-            container.style.setProperty('--optimal-columns', optimalColumns);
-            container.classList.add('optimized-layout');
-        } else {
-            // For hybrid layouts, remove grid optimization from main container
-            container.style.removeProperty('--optimal-columns');
-            container.classList.remove('optimized-layout');
-        }
+        // Apply dynamic styling based on strategy - use consistent grid for all
+        container.style.setProperty('--optimal-columns', optimalColumns);
+        container.classList.add('optimized-layout')
         
         container.style.setProperty('--layout-strategy', layoutStrategy.name);
         

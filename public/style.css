@@ -1283,13 +1283,7 @@ textarea:focus {
     overflow: visible;
 }
 
-/* Hybrid layout for 15+ clubs */
-.primary-clubs-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-}
+/* Hybrid layout for 15+ clubs - overflow section styling only */
 
 .overflow-clubs-section {
     border-top: 1px solid var(--border-primary);
@@ -1363,24 +1357,14 @@ textarea:focus {
     font-size: 0.85rem;
 }
 
-/* Responsive adjustments for hybrid layout */
+/* Responsive adjustments for overflow containers */
 @media (max-width: 1200px) {
-    .primary-clubs-section {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
-    }
-    
     .overflow-container {
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     }
 }
 
 @media (max-width: 900px) {
-    .primary-clubs-section {
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 8px;
-    }
-    
     .overflow-container {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
         gap: 6px;
