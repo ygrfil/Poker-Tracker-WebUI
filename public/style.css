@@ -1283,6 +1283,110 @@ textarea:focus {
     overflow: visible;
 }
 
+/* Hybrid layout for 15+ clubs */
+.primary-clubs-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.overflow-clubs-section {
+    border-top: 1px solid var(--border-primary);
+    padding-top: 12px;
+}
+
+.overflow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+
+.overflow-header h4 {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.toggle-overflow {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-overflow:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.overflow-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+.overflow-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+.overflow-container.expanded {
+    max-height: 300px;
+    overflow-y: auto;
+    opacity: 1;
+    padding-top: 8px;
+}
+
+.overflow-club {
+    padding: 6px;
+    min-height: 50px;
+}
+
+.overflow-club h3 {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.overflow-club .stat-value {
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments for hybrid layout */
+@media (max-width: 1200px) {
+    .primary-clubs-section {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .overflow-container {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .primary-clubs-section {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px;
+    }
+    
+    .overflow-container {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 6px;
+    }
+}
+
 /* Ensure smooth transitions when switching periods */
 .summary-cards {
     transition: grid-template-columns 0.3s ease, gap 0.3s ease;

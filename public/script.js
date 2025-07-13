@@ -91,6 +91,11 @@ class PokerTracker {
                 const commission = parseFloat(clubCard.dataset.commission || 0);
                 this.openCommissionModal(clubName, commission);
             }
+            
+            // Handle overflow toggle button
+            if (e.target.classList.contains('toggle-overflow')) {
+                this.toggleOverflowSection(e.target);
+            }
         });
         
         // Cache and bind other elements
@@ -563,11 +568,54 @@ class PokerTracker {
         // Sort clubs based on current period and proximity to overall result
         const sortedSummary = this.smartSortClubs(summary, overallTotal);
         
-        // Create club cards
-        sortedSummary.forEach(club => {
-            const clubCard = this.createClubCard(club);
-            fragment.appendChild(clubCard);
-        });
+        // Handle hybrid layout for 15+ clubs
+        const layoutStrategy = this.determineLayoutStrategy(summary.length);
+        
+        if (layoutStrategy.name === 'hybrid-overflow') {
+            // Split clubs into primary and overflow sections
+            const primaryClubs = sortedSummary.slice(0, layoutStrategy.maxVisibleClubs);
+            const overflowClubs = sortedSummary.slice(layoutStrategy.maxVisibleClubs);
+            
+            // Create primary clubs section
+            const primarySection = document.createElement('div');
+            primarySection.className = 'primary-clubs-section';
+            primaryClubs.forEach(club => {
+                const clubCard = this.createClubCard(club);
+                primarySection.appendChild(clubCard);
+            });
+            fragment.appendChild(primarySection);
+            
+            // Create overflow section if there are overflow clubs
+            if (overflowClubs.length > 0) {
+                const overflowSection = document.createElement('div');
+                overflowSection.className = 'overflow-clubs-section';
+                
+                const overflowHeader = document.createElement('div');
+                overflowHeader.className = 'overflow-header';
+                overflowHeader.innerHTML = `
+                    <h4>Additional Clubs (${overflowClubs.length})</h4>
+                    <button class="toggle-overflow" data-expanded="false">Show All</button>
+                `;
+                overflowSection.appendChild(overflowHeader);
+                
+                const overflowContainer = document.createElement('div');
+                overflowContainer.className = 'overflow-container collapsed';
+                overflowClubs.forEach(club => {
+                    const clubCard = this.createClubCard(club);
+                    clubCard.classList.add('overflow-club');
+                    overflowContainer.appendChild(clubCard);
+                });
+                overflowSection.appendChild(overflowContainer);
+                
+                fragment.appendChild(overflowSection);
+            }
+        } else {
+            // Standard layout - show all clubs
+            sortedSummary.forEach(club => {
+                const clubCard = this.createClubCard(club);
+                fragment.appendChild(clubCard);
+            });
+        }
 
         container.replaceChildren(fragment);
         
@@ -575,10 +623,8 @@ class PokerTracker {
         container.setAttribute('data-period', this.currentPeriod);
         container.setAttribute('data-club-count', Math.min(summary.length, 6));
         
-        // Optimize layout for day/week views
-        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
-            this.optimizeLayoutForPeriod(container, summary.length);
-        }
+        // Optimize layout for all views with smart club management
+        this.optimizeLayoutForPeriod(container, summary.length);
         
         this.lastSummaryHash = newHash;
     }
@@ -650,19 +696,22 @@ class PokerTracker {
     }
 
     optimizeLayoutForPeriod(container, clubCount) {
-        // Dynamic layout optimization for day/week views
+        // Dynamic layout optimization for all views with smart club management
         const viewport = {
             width: window.innerWidth,
             height: window.innerHeight
         };
         
-        // Calculate optimal columns based on screen size and club count
-        let optimalColumns = this.calculateOptimalColumns(viewport.width, clubCount);
+        // Determine layout strategy based on club count and period
+        const layoutStrategy = this.determineLayoutStrategy(clubCount);
         
-        // Ensure all clubs fit without scrolling
-        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+        // Calculate optimal columns based on strategy
+        let optimalColumns = this.calculateOptimalColumns(viewport.width, clubCount, layoutStrategy);
+        
+        // For periods with potential for many clubs, optimize for screen space
+        if (layoutStrategy.showAllWithoutScrolling) {
             const availableHeight = this.getAvailableHeight();
-            const cardHeight = this.estimateCardHeight();
+            const cardHeight = this.estimateCardHeight(layoutStrategy.compactMode);
             const maxRows = Math.floor(availableHeight / cardHeight);
             const maxColumnsForHeight = Math.ceil(clubCount / maxRows);
             
@@ -670,22 +719,71 @@ class PokerTracker {
             optimalColumns = Math.max(optimalColumns, maxColumnsForHeight);
         }
         
-        // Apply dynamic styling
-        container.style.setProperty('--optimal-columns', optimalColumns);
-        container.classList.add('optimized-layout');
+        // Apply dynamic styling based on strategy
+        if (layoutStrategy.name !== 'hybrid-overflow') {
+            // For non-hybrid layouts, apply grid optimization to main container
+            container.style.setProperty('--optimal-columns', optimalColumns);
+            container.classList.add('optimized-layout');
+        } else {
+            // For hybrid layouts, remove grid optimization from main container
+            container.style.removeProperty('--optimal-columns');
+            container.classList.remove('optimized-layout');
+        }
+        
+        container.style.setProperty('--layout-strategy', layoutStrategy.name);
+        
+        // Set layout mode for CSS targeting
+        container.setAttribute('data-layout-mode', layoutStrategy.name);
     }
 
-    calculateOptimalColumns(viewportWidth, clubCount) {
-        // Calculate optimal number of columns based on viewport width
-        const minCardWidth = 120; // Minimum readable card width
-        const gap = 8;
+    determineLayoutStrategy(clubCount) {
+        // Smart layout strategy based on club count and period
+        if (clubCount <= 12) {
+            return {
+                name: 'show-all',
+                showAllWithoutScrolling: true,
+                compactMode: false,
+                maxVisibleClubs: clubCount
+            };
+        } else if (clubCount <= 18) {
+            return {
+                name: 'compact-all',
+                showAllWithoutScrolling: true,
+                compactMode: true,
+                maxVisibleClubs: clubCount
+            };
+        } else {
+            // 19+ clubs: Show top clubs + scrollable overflow
+            const maxPrimaryClubs = this.currentPeriod === 'day' || this.currentPeriod === 'week' ? 12 : 15;
+            return {
+                name: 'hybrid-overflow',
+                showAllWithoutScrolling: false,
+                compactMode: true,
+                maxVisibleClubs: maxPrimaryClubs,
+                overflowClubs: clubCount - maxPrimaryClubs
+            };
+        }
+    }
+
+    calculateOptimalColumns(viewportWidth, clubCount, layoutStrategy) {
+        // Calculate optimal number of columns based on viewport width and layout strategy
+        const minCardWidth = layoutStrategy?.compactMode ? 100 : 120;
+        const gap = layoutStrategy?.compactMode ? 6 : 8;
         const padding = 40; // Account for page padding
         
         const availableWidth = viewportWidth - padding;
         const maxColumns = Math.floor(availableWidth / (minCardWidth + gap));
         
-        // Don't exceed the number of clubs
-        return Math.min(maxColumns, clubCount, 6); // Max 6 columns for readability
+        // Adjust max columns based on layout strategy
+        let maxColumnLimit = 6;
+        if (layoutStrategy?.name === 'compact-all') {
+            maxColumnLimit = 8; // Allow more columns in compact mode
+        } else if (layoutStrategy?.name === 'hybrid-overflow') {
+            maxColumnLimit = 6; // Keep reasonable for hybrid mode
+        }
+        
+        // Don't exceed the number of clubs or column limit
+        return Math.min(maxColumns, clubCount, maxColumnLimit);
     }
 
     getAvailableHeight() {
@@ -698,12 +796,34 @@ class PokerTracker {
         return window.innerHeight - headerHeight - periodBarHeight - overallCardHeight - padding;
     }
 
-    estimateCardHeight() {
-        // Estimate card height based on current period
-        if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
-            return 60; // Compact cards for day/week
+    estimateCardHeight(compactMode = false) {
+        // Estimate card height based on layout mode
+        if (compactMode) {
+            return 55; // Compact cards for all compact layouts
+        } else if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
+            return 60; // Slightly compact for day/week
         }
-        return 80; // Normal cards for month/year
+        return 80; // Normal cards for standard layouts
+    }
+
+    toggleOverflowSection(toggleButton) {
+        // Toggle the overflow section visibility
+        const overflowContainer = toggleButton.closest('.overflow-clubs-section').querySelector('.overflow-container');
+        const isExpanded = toggleButton.dataset.expanded === 'true';
+        
+        if (isExpanded) {
+            // Collapse
+            overflowContainer.classList.remove('expanded');
+            overflowContainer.classList.add('collapsed');
+            toggleButton.textContent = 'Show All';
+            toggleButton.dataset.expanded = 'false';
+        } else {
+            // Expand
+            overflowContainer.classList.remove('collapsed');
+            overflowContainer.classList.add('expanded');
+            toggleButton.textContent = 'Show Less';
+            toggleButton.dataset.expanded = 'true';
+        }
     }
 
     setupResizeHandler() {
@@ -712,13 +832,11 @@ class PokerTracker {
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
-                // Re-optimize layout if in day/week view
-                if (this.currentPeriod === 'day' || this.currentPeriod === 'week') {
-                    const container = this.domCache.summaryCards;
-                    const clubCount = parseInt(container.getAttribute('data-club-count') || 0);
-                    if (clubCount > 0) {
-                        this.optimizeLayoutForPeriod(container, clubCount);
-                    }
+                // Re-optimize layout for all periods
+                const container = this.domCache.summaryCards;
+                const clubCount = parseInt(container.getAttribute('data-club-count') || 0);
+                if (clubCount > 0) {
+                    this.optimizeLayoutForPeriod(container, clubCount);
                 }
             }, 250); // 250ms debounce
         });
