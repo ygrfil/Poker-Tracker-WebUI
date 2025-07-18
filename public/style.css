@@ -26,6 +26,18 @@
     --overflow-card-min-width: clamp(100px, 10vw, 160px);
     --layout-gap: clamp(4px, 1vw, 12px);
     --overflow-gap: clamp(4px, 0.8vw, 8px);
+    
+    /* Ultra-responsive text scaling */
+    --card-title-font: clamp(8px, 2.5vw, 1rem);
+    --card-value-font: clamp(8px, 2.2vw, 0.9rem);
+    --card-ultra-compact-title: clamp(8px, 1.8vw, 0.85rem);
+    --card-ultra-compact-value: clamp(8px, 1.6vw, 0.8rem);
+    
+    /* Show all clubs mode properties */
+    --show-all-card-width: clamp(140px, 15vw, 220px);
+    --show-all-gap: clamp(8px, 1.2vw, 16px);
+    --show-all-title-font: clamp(8px, 3vw, 1.1rem);
+    --show-all-value-font: clamp(8px, 2.8vw, 1rem);
 }
 
 * {
@@ -723,12 +735,14 @@ select:focus {
 .summary-card h3 {
     color: var(--text-primary);
     margin-bottom: 8px;
-    font-size: 1rem;
+    font-size: var(--card-title-font);
     font-weight: 600;
     border: none;
     padding: 0;
     text-align: center;
     line-height: 1.2;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .summary-stats {
@@ -756,7 +770,7 @@ select:focus {
 }
 
 .stat-value {
-    font-size: 0.8rem;
+    font-size: var(--card-value-font);
     font-weight: 700;
     line-height: 1;
 }
@@ -1208,14 +1222,34 @@ textarea:focus {
 
 .summary-cards[data-period="day"] .summary-card h3,
 .summary-cards[data-period="week"] .summary-card h3 {
-    font-size: 0.85rem;
+    font-size: var(--card-title-font);
     margin-bottom: 4px;
     line-height: 1.2;
 }
 
 .summary-cards[data-period="day"] .stat-value,
 .summary-cards[data-period="week"] .stat-value {
-    font-size: 0.9rem;
+    font-size: var(--card-value-font);
+    font-weight: 600;
+}
+
+/* Ultra-compact styling for many clubs (15+ clubs) */
+.summary-cards[data-layout-mode="hybrid-overflow"] .summary-card:not(.overall-summary),
+.summary-cards[data-layout-mode="compact-all"] .summary-card:not(.overall-summary) {
+    padding: 6px;
+    min-height: 50px;
+}
+
+.summary-cards[data-layout-mode="hybrid-overflow"] .summary-card h3,
+.summary-cards[data-layout-mode="compact-all"] .summary-card h3 {
+    font-size: var(--card-ultra-compact-title);
+    margin-bottom: 2px;
+    line-height: 1.1;
+}
+
+.summary-cards[data-layout-mode="hybrid-overflow"] .stat-value,
+.summary-cards[data-layout-mode="compact-all"] .stat-value {
+    font-size: var(--card-ultra-compact-value);
     font-weight: 600;
 }
 
@@ -1334,23 +1368,229 @@ textarea:focus {
     transition: grid-template-columns 0.3s ease, gap 0.3s ease;
 }
 
-/* Ultra-compact mode for many clubs on small screens */
+/* Show All Clubs Mode Styles */
+.show-all-clubs-mode {
+    /* Hide results table when in show all clubs mode */
+}
+
+.show-all-clubs-mode .results-table-container {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.show-all-clubs-mode .summary-bar {
+    flex: 1;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.show-all-clubs-mode .summary-cards {
+    grid-template-columns: repeat(auto-fit, minmax(var(--show-all-card-width), 1fr));
+    gap: var(--show-all-gap);
+    max-height: none;
+    overflow: visible;
+    height: auto;
+    padding: 12px 0;
+}
+
+.show-all-clubs-mode .summary-card:not(.overall-summary) {
+    padding: 12px;
+    min-height: 80px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.show-all-clubs-mode .summary-card h3 {
+    font-size: var(--show-all-title-font);
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.show-all-clubs-mode .stat-value {
+    font-size: var(--show-all-value-font);
+    font-weight: 700;
+}
+
+/* Overall summary toggle styling */
+.overall-summary.toggle-button {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.overall-summary.toggle-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-primary);
+}
+
+.overall-summary.toggle-button::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.overall-summary.toggle-button.active::after {
+    transform: rotate(180deg);
+    border-top-color: var(--accent-primary);
+}
+
+.overall-summary.toggle-button .summary-stats {
+    position: relative;
+}
+
+.overall-summary.toggle-button .summary-stats::before {
+    content: 'Click to show all clubs';
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.overall-summary.toggle-button:hover .summary-stats::before {
+    opacity: 1;
+}
+
+.overall-summary.toggle-button.active .summary-stats::before {
+    content: 'Click to show results';
+}
+
+/* Smooth transitions for mode switching */
+.right-panel {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.summary-bar {
+    transition: flex 0.3s ease, height 0.3s ease;
+}
+
+/* Enhanced mobile responsiveness for show all clubs mode */
+@media (max-width: 768px) {
+    .show-all-clubs-mode .summary-cards {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px;
+        padding: 8px 0;
+    }
+    
+    .show-all-clubs-mode .summary-card:not(.overall-summary) {
+        padding: 8px;
+        min-height: 60px;
+    }
+}
+
 @media (max-width: 480px) {
-    .summary-cards[data-period="day"] .summary-card:not(.overall-summary),
-    .summary-cards[data-period="week"] .summary-card:not(.overall-summary) {
+    .show-all-clubs-mode .summary-cards {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 6px;
+    }
+    
+    .show-all-clubs-mode .summary-card:not(.overall-summary) {
         padding: 6px;
         min-height: 50px;
     }
-    
-    .summary-cards[data-period="day"] .summary-card h3,
-    .summary-cards[data-period="week"] .summary-card h3 {
-        font-size: 0.75rem;
-        margin-bottom: 2px;
+}
+
+/* Enhanced mobile responsive behavior */
+@media (max-width: 768px) {
+    :root {
+        --card-title-font: clamp(8px, 3vw, 0.9rem);
+        --card-value-font: clamp(8px, 2.8vw, 0.8rem);
+        --card-ultra-compact-title: clamp(8px, 2.5vw, 0.8rem);
+        --card-ultra-compact-value: clamp(8px, 2.2vw, 0.75rem);
     }
     
-    .summary-cards[data-period="day"] .stat-value,
-    .summary-cards[data-period="week"] .stat-value {
-        font-size: 0.8rem;
+    .summary-cards {
+        gap: clamp(4px, 1vw, 8px);
+    }
+    
+    .summary-card {
+        padding: 6px;
+        min-height: auto;
+    }
+    
+    .summary-card h3 {
+        margin-bottom: 4px;
+        line-height: 1.1;
+    }
+}
+
+/* Ultra-compact mode for many clubs on small screens */
+@media (max-width: 480px) {
+    :root {
+        --card-title-font: clamp(8px, 3.5vw, 0.85rem);
+        --card-value-font: clamp(8px, 3vw, 0.75rem);
+        --card-ultra-compact-title: clamp(8px, 3vw, 0.75rem);
+        --card-ultra-compact-value: clamp(8px, 2.8vw, 0.7rem);
+        --show-all-title-font: clamp(8px, 3.8vw, 1rem);
+        --show-all-value-font: clamp(8px, 3.5vw, 0.9rem);
+    }
+    
+    .summary-cards {
+        gap: clamp(3px, 0.8vw, 6px);
+    }
+    
+    .summary-card:not(.overall-summary) {
+        padding: 4px;
+        min-height: 45px;
+    }
+    
+    .summary-card h3 {
+        margin-bottom: 2px;
+        line-height: 1;
+        word-break: break-all;
+    }
+    
+    .stat {
+        padding: 4px 6px;
+        min-width: 60px;
+    }
+    
+    .stat-label {
+        font-size: clamp(8px, 2vw, 0.65rem);
+    }
+}
+
+/* Extra small screens - ensure cards can shrink to fit club names */
+@media (max-width: 360px) {
+    :root {
+        --card-min-width: clamp(80px, 20vw, 120px);
+        --card-title-font: clamp(8px, 4vw, 0.8rem);
+        --card-value-font: clamp(8px, 3.5vw, 0.7rem);
+    }
+    
+    .summary-card:not(.overall-summary) {
+        padding: 3px;
+        min-height: 40px;
+    }
+    
+    .summary-card h3 {
+        font-size: clamp(8px, 4vw, 0.75rem);
+        line-height: 0.9;
+        margin-bottom: 1px;
+    }
+    
+    .stat-value {
+        font-size: clamp(8px, 3.5vw, 0.65rem);
+    }
+    
+    .stat {
+        padding: 2px 4px;
+        min-width: 50px;
     }
 }
 

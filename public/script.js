@@ -9,6 +9,7 @@ class PokerTracker {
         this.domCache = {}; // Cache for DOM elements
         this.pendingDOMUpdates = []; // Batch DOM updates
         this.layoutStrategyCache = new Map(); // Cache for layout strategy optimization
+        this.showAllClubsMode = false; // State for show all clubs mode
         this.init();
     }
 
@@ -18,6 +19,7 @@ class PokerTracker {
         this.setCurrentDateTime();
         this.setFilterDate();
         this.updatePeriodDisplay();
+        this.initializeViewMode(); // Initialize view mode state
         this.loadData();
         this.loadPreviousEntries();
     }
@@ -86,6 +88,13 @@ class PokerTracker {
         
         // Event delegation for summary cards
         this.domCache.summaryCards.addEventListener('click', (e) => {
+            // Handle overall summary toggle
+            const overallSummary = e.target.closest('.overall-summary.toggle-button');
+            if (overallSummary) {
+                this.toggleShowAllClubs();
+                return;
+            }
+            
             const clubCard = e.target.closest('.club-card.clickable');
             if (clubCard) {
                 const clubName = clubCard.dataset.clubName;
@@ -604,7 +613,7 @@ class PokerTracker {
 
     createOverallSummaryCard(overallTotal) {
         const card = document.createElement('div');
-        card.className = 'summary-card overall-summary';
+        card.className = `summary-card overall-summary toggle-button ${this.showAllClubsMode ? 'active' : ''}`;
         card.innerHTML = `
             <h3>Overall Total</h3>
             <div class="summary-stats">
@@ -699,6 +708,15 @@ class PokerTracker {
             height: window.innerHeight
         };
         
+        // Special handling for show all clubs mode
+        if (this.showAllClubsMode) {
+            const showAllStrategy = this.calculateShowAllClubsLayout(viewport, clubCount);
+            container.style.setProperty('--optimal-columns', showAllStrategy.columns);
+            container.classList.add('optimized-layout');
+            container.setAttribute('data-layout-mode', 'show-all-clubs');
+            return;
+        }
+        
         // Determine layout strategy based on club count and period
         const layoutStrategy = this.determineLayoutStrategy(clubCount);
         
@@ -724,6 +742,40 @@ class PokerTracker {
         
         // Set layout mode for CSS targeting
         container.setAttribute('data-layout-mode', layoutStrategy.name);
+    }
+
+    calculateShowAllClubsLayout(viewport, clubCount) {
+        // Calculate optimal layout for show all clubs mode
+        const minCardWidth = 140; // Minimum card width in show all mode
+        const gap = 16; // Gap between cards
+        const padding = 40; // Account for page padding
+        
+        const availableWidth = viewport.width - padding;
+        const maxColumns = Math.floor(availableWidth / (minCardWidth + gap));
+        
+        // For show all clubs mode, we want to show as many as possible without scrolling
+        const availableHeight = this.getShowAllAvailableHeight();
+        const cardHeight = 80; // Card height in show all mode
+        const maxRows = Math.floor(availableHeight / (cardHeight + gap));
+        
+        // Calculate optimal columns that fit both width and height constraints
+        const maxColumnsForHeight = Math.ceil(clubCount / maxRows);
+        const optimalColumns = Math.min(maxColumns, maxColumnsForHeight, 8); // Max 8 columns
+        
+        return {
+            columns: Math.max(optimalColumns, 1),
+            maxRows: maxRows
+        };
+    }
+
+    getShowAllAvailableHeight() {
+        // Calculate available height for show all clubs mode (excludes results table)
+        const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
+        const periodBarHeight = document.querySelector('.period-bar')?.offsetHeight || 0;
+        const overallCardHeight = 80; // Height of overall summary card
+        const padding = 60;
+        
+        return window.innerHeight - headerHeight - periodBarHeight - overallCardHeight - padding;
     }
 
     determineLayoutStrategy(clubCount) {
@@ -850,6 +902,52 @@ class PokerTracker {
         
         overflowContainer.appendChild(fragment);
         overflowContainer.dataset.lazyLoaded = 'true';
+    }
+
+    toggleShowAllClubs() {
+        // Toggle the show all clubs mode
+        this.showAllClubsMode = !this.showAllClubsMode;
+        
+        const rightPanel = document.querySelector('.right-panel');
+        const overallSummary = document.querySelector('.overall-summary.toggle-button');
+        
+        if (this.showAllClubsMode) {
+            rightPanel.classList.add('show-all-clubs-mode');
+            if (overallSummary) {
+                overallSummary.classList.add('active');
+            }
+        } else {
+            rightPanel.classList.remove('show-all-clubs-mode');
+            if (overallSummary) {
+                overallSummary.classList.remove('active');
+            }
+        }
+        
+        // Save the new state
+        this.saveViewModeState();
+        
+        // Re-render summary to update layout for the new mode
+        // But don't reload data - just update the display
+        this.updateLayoutForCurrentMode();
+    }
+
+    updateLayoutForCurrentMode() {
+        // Re-optimize layout for current mode without reloading data
+        const container = this.domCache.summaryCards;
+        const clubCount = parseInt(container.getAttribute('data-club-count') || 0);
+        
+        if (clubCount > 0) {
+            // Update layout mode attribute for CSS targeting
+            if (this.showAllClubsMode) {
+                container.setAttribute('data-layout-mode', 'show-all-clubs');
+            } else {
+                // Restore previous layout mode based on club count
+                const layoutStrategy = this.determineLayoutStrategy(clubCount);
+                container.setAttribute('data-layout-mode', layoutStrategy.name);
+            }
+            
+            this.optimizeLayoutForPeriod(container, clubCount);
+        }
     }
 
     setupResizeHandler() {
@@ -1104,14 +1202,38 @@ class PokerTracker {
             dayStartTime: 0, // 12 AM
             weekStartDay: 1, // Monday
             dateFormat: 'default',
-            currencySymbol: '$'
+            currencySymbol: '$',
+            showAllClubsMode: false // Persist show all clubs mode preference
         };
-        return JSON.parse(localStorage.getItem('poker_settings') || JSON.stringify(defaultSettings));
+        const settings = JSON.parse(localStorage.getItem('poker_settings') || JSON.stringify(defaultSettings));
+        
+        // Load show all clubs mode state
+        this.showAllClubsMode = settings.showAllClubsMode || false;
+        
+        return settings;
     }
 
     saveSettings(settings) {
         this.settings = settings;
         localStorage.setItem('poker_settings', JSON.stringify(settings));
+    }
+
+    saveViewModeState() {
+        // Save current view mode to settings
+        const currentSettings = this.loadSettings();
+        currentSettings.showAllClubsMode = this.showAllClubsMode;
+        this.saveSettings(currentSettings);
+    }
+
+    initializeViewMode() {
+        // Initialize view mode from saved settings
+        const rightPanel = document.querySelector('.right-panel');
+        
+        if (this.showAllClubsMode) {
+            rightPanel.classList.add('show-all-clubs-mode');
+        } else {
+            rightPanel.classList.remove('show-all-clubs-mode');
+        }
     }
 
     openSettingsModal() {
