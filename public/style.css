@@ -22,7 +22,7 @@
     --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.2);
     
     /* Responsive layout properties */
-    --card-min-width: clamp(120px, 12vw, 180px);
+    --card-min-width: clamp(100px, 10vw, 160px);
     --overflow-card-min-width: clamp(100px, 10vw, 160px);
     --layout-gap: clamp(4px, 1vw, 12px);
     --overflow-gap: clamp(4px, 0.8vw, 8px);
@@ -565,6 +565,8 @@ select:focus {
     padding: 12px;
     margin-bottom: 10px;
     flex-shrink: 0;
+    overflow: hidden; /* Ensure content stays within bounds */
+    box-sizing: border-box;
 }
 
 .results-table-container {
@@ -1209,6 +1211,8 @@ textarea:focus {
     gap: var(--layout-gap);
     grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
     max-height: none; /* Remove height restrictions for day/week views */
+    width: 100%;
+    overflow: hidden; /* Prevent cards from stretching beyond container */
 }
 
 /* Adaptive layouts - now use fluid CSS custom properties for all periods */
@@ -1374,8 +1378,15 @@ textarea:focus {
 }
 
 .show-all-clubs-mode .results-table-container {
-    display: none;
+    display: none !important;
     opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Ensure results table is visible in normal mode */
+.results-table-container {
+    display: flex;
+    opacity: 1;
     transition: opacity 0.3s ease;
 }
 

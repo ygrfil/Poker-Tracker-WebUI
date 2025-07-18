@@ -22,6 +22,7 @@ class PokerTracker {
         this.initializeViewMode(); // Initialize view mode state
         this.loadData();
         this.loadPreviousEntries();
+        this.setupAutoTimeRefresh(); // Setup automatic time refresh every 30 minutes
     }
 
     cacheDOMElements() {
@@ -910,6 +911,8 @@ class PokerTracker {
         
         const rightPanel = document.querySelector('.right-panel');
         const overallSummary = document.querySelector('.overall-summary.toggle-button');
+        const summaryBar = document.querySelector('.summary-bar');
+        const resultsContainer = document.querySelector('.results-table-container');
         
         if (this.showAllClubsMode) {
             rightPanel.classList.add('show-all-clubs-mode');
@@ -920,6 +923,17 @@ class PokerTracker {
             rightPanel.classList.remove('show-all-clubs-mode');
             if (overallSummary) {
                 overallSummary.classList.remove('active');
+            }
+            
+            // Force reset summary bar and results container styles
+            if (summaryBar) {
+                summaryBar.style.flex = '';
+                summaryBar.style.height = '';
+                summaryBar.style.maxHeight = '';
+            }
+            if (resultsContainer) {
+                resultsContainer.style.display = '';
+                resultsContainer.style.opacity = '';
             }
         }
         
@@ -1234,6 +1248,42 @@ class PokerTracker {
         } else {
             rightPanel.classList.remove('show-all-clubs-mode');
         }
+    }
+
+    setupAutoTimeRefresh() {
+        // Refresh datetime input every 30 minutes to keep time current
+        const refreshInterval = 30 * 60 * 1000; // 30 minutes in milliseconds
+        
+        setInterval(() => {
+            // Only update if the datetime input hasn't been manually modified recently
+            const dateTimeInput = document.getElementById('dateTime');
+            if (dateTimeInput) {
+                const now = new Date();
+                const inputTime = new Date(dateTimeInput.value);
+                const timeDiff = Math.abs(now - inputTime);
+                
+                // Only auto-update if the current value is more than 2 minutes old
+                // This prevents overwriting user's manual time entries
+                if (timeDiff > 2 * 60 * 1000) {
+                    this.setCurrentDateTime();
+                }
+            }
+        }, refreshInterval);
+        
+        // Also set up a more frequent check every 5 minutes for users who stay on the page long
+        setInterval(() => {
+            const dateTimeInput = document.getElementById('dateTime');
+            if (dateTimeInput) {
+                const now = new Date();
+                const inputTime = new Date(dateTimeInput.value);
+                const timeDiff = Math.abs(now - inputTime);
+                
+                // Auto-update if time is more than 10 minutes old
+                if (timeDiff > 10 * 60 * 1000) {
+                    this.setCurrentDateTime();
+                }
+            }
+        }, 5 * 60 * 1000); // 5 minutes
     }
 
     openSettingsModal() {
