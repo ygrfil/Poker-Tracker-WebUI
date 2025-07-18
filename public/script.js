@@ -747,11 +747,13 @@ class PokerTracker {
 
     calculateShowAllClubsLayout(viewport, clubCount) {
         // Calculate optimal layout for show all clubs mode
-        const minCardWidth = 140; // Minimum card width in show all mode
-        const gap = 16; // Gap between cards
-        const padding = 40; // Account for page padding
+        const minCardWidth = 120; // Reduced minimum card width
+        const gap = 12; // Reduced gap between cards
+        const containerPadding = 40; // Main page padding
+        const summaryBarPadding = 16; // Summary bar internal padding
+        const safetyMargin = 20; // Extra margin to ensure cards don't touch borders
         
-        const availableWidth = viewport.width - padding;
+        const availableWidth = viewport.width - containerPadding - summaryBarPadding - safetyMargin;
         const maxColumns = Math.floor(availableWidth / (minCardWidth + gap));
         
         // For show all clubs mode, we want to show as many as possible without scrolling
@@ -761,7 +763,7 @@ class PokerTracker {
         
         // Calculate optimal columns that fit both width and height constraints
         const maxColumnsForHeight = Math.ceil(clubCount / maxRows);
-        const optimalColumns = Math.min(maxColumns, maxColumnsForHeight, 8); // Max 8 columns
+        const optimalColumns = Math.min(maxColumns, maxColumnsForHeight, 6); // Max 6 columns (reduced)
         
         return {
             columns: Math.max(optimalColumns, 1),
@@ -826,19 +828,21 @@ class PokerTracker {
 
     calculateOptimalColumns(viewportWidth, clubCount, layoutStrategy) {
         // Calculate optimal number of columns based on viewport width and layout strategy
-        const minCardWidth = layoutStrategy?.compactMode ? 100 : 120;
+        const minCardWidth = layoutStrategy?.compactMode ? 90 : 100;
         const gap = layoutStrategy?.compactMode ? 6 : 8;
-        const padding = 40; // Account for page padding
+        const containerPadding = 40; // Main page padding
+        const summaryBarPadding = 16; // Summary bar internal padding (8px * 2)
+        const safetyMargin = 20; // Extra margin to ensure cards don't touch borders
         
-        const availableWidth = viewportWidth - padding;
+        const availableWidth = viewportWidth - containerPadding - summaryBarPadding - safetyMargin;
         const maxColumns = Math.floor(availableWidth / (minCardWidth + gap));
         
         // Adjust max columns based on layout strategy
-        let maxColumnLimit = 6;
+        let maxColumnLimit = 5; // More conservative
         if (layoutStrategy?.name === 'compact-all') {
-            maxColumnLimit = 8; // Allow more columns in compact mode
+            maxColumnLimit = 6; // Reduced from 8
         } else if (layoutStrategy?.name === 'hybrid-overflow') {
-            maxColumnLimit = 6; // Keep reasonable for hybrid mode
+            maxColumnLimit = 5; // Keep reasonable for hybrid mode
         }
         
         // Don't exceed the number of clubs or column limit

@@ -22,10 +22,10 @@
     --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.2);
     
     /* Responsive layout properties */
-    --card-min-width: clamp(100px, 10vw, 160px);
-    --overflow-card-min-width: clamp(100px, 10vw, 160px);
-    --layout-gap: clamp(4px, 1vw, 12px);
-    --overflow-gap: clamp(4px, 0.8vw, 8px);
+    --card-min-width: clamp(90px, 8vw, 140px);
+    --overflow-card-min-width: clamp(80px, 8vw, 120px);
+    --layout-gap: clamp(4px, 0.8vw, 8px);
+    --overflow-gap: clamp(3px, 0.6vw, 6px);
     
     /* Ultra-responsive text scaling */
     --card-title-font: clamp(8px, 2.5vw, 1rem);
@@ -562,11 +562,13 @@ select:focus {
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
-    padding: 12px;
+    padding: 8px; /* Reduced padding to give more internal space */
     margin-bottom: 10px;
     flex-shrink: 0;
     overflow: hidden; /* Ensure content stays within bounds */
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .results-table-container {
@@ -708,24 +710,27 @@ select:focus {
 
 .summary-cards {
     display: flex;
-    gap: 12px;
+    gap: 8px; /* Reduced gap to fit more cards */
     overflow-x: auto;
     height: 100%;
     align-items: stretch;
     padding: 0;
+    margin: 0; /* Remove any margin */
+    flex: 1; /* Take available space */
 }
 
 .summary-card {
     background: var(--gradient-secondary);
-    padding: 12px 16px;
+    padding: 10px 12px; /* Reduced padding */
     border-radius: 6px;
     border-left: 4px solid var(--accent-primary);
     border: 1px solid var(--border-primary);
-    min-width: 200px;
+    min-width: 180px; /* Reduced min-width */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 
 .summary-card.overall-summary {
@@ -1213,6 +1218,9 @@ textarea:focus {
     max-height: none; /* Remove height restrictions for day/week views */
     width: 100%;
     overflow: hidden; /* Prevent cards from stretching beyond container */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /* Adaptive layouts - now use fluid CSS custom properties for all periods */
@@ -1490,17 +1498,33 @@ textarea:focus {
     transition: flex 0.3s ease, height 0.3s ease;
 }
 
+/* Ensure proper container spacing in all modes */
+.summary-cards:not(.show-all-clubs-mode) {
+    /* Normal horizontal scroll mode - ensure cards fit properly */
+    margin-right: 4px; /* Small margin to prevent touching right edge */
+}
+
+.summary-cards.show-all-clubs-mode {
+    /* Grid mode - ensure grid respects container boundaries */
+    margin: 0;
+    padding-right: 4px; /* Small padding to prevent touching right edge */
+}
+
 /* Enhanced mobile responsiveness for show all clubs mode */
 @media (max-width: 768px) {
     .show-all-clubs-mode .summary-cards {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 8px;
-        padding: 8px 0;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 6px;
+        padding: 6px 0;
     }
     
     .show-all-clubs-mode .summary-card:not(.overall-summary) {
-        padding: 8px;
+        padding: 6px;
         min-height: 60px;
+    }
+    
+    .summary-card {
+        min-width: 160px; /* Reduced for mobile */
     }
 }
 
