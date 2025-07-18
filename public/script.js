@@ -917,6 +917,7 @@ class PokerTracker {
         const overallSummary = document.querySelector('.overall-summary.toggle-button');
         const summaryBar = document.querySelector('.summary-bar');
         const resultsContainer = document.querySelector('.results-table-container');
+        const summaryCards = this.domCache.summaryCards;
         
         if (this.showAllClubsMode) {
             rightPanel.classList.add('show-all-clubs-mode');
@@ -929,24 +930,34 @@ class PokerTracker {
                 overallSummary.classList.remove('active');
             }
             
-            // Force reset summary bar and results container styles
+            // Force reset all inline styles to ensure CSS takes over
             if (summaryBar) {
                 summaryBar.style.flex = '';
                 summaryBar.style.height = '';
                 summaryBar.style.maxHeight = '';
+                summaryBar.style.overflow = '';
             }
             if (resultsContainer) {
                 resultsContainer.style.display = '';
                 resultsContainer.style.opacity = '';
+            }
+            if (summaryCards) {
+                summaryCards.style.display = '';
+                summaryCards.style.gridTemplateColumns = '';
+                summaryCards.style.gap = '';
+                summaryCards.style.height = '';
+                summaryCards.style.maxHeight = '';
+                summaryCards.style.overflow = '';
             }
         }
         
         // Save the new state
         this.saveViewModeState();
         
-        // Re-render summary to update layout for the new mode
-        // But don't reload data - just update the display
-        this.updateLayoutForCurrentMode();
+        // Force a layout refresh
+        setTimeout(() => {
+            this.updateLayoutForCurrentMode();
+        }, 50); // Small delay to ensure CSS has been applied
     }
 
     updateLayoutForCurrentMode() {

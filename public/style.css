@@ -710,13 +710,14 @@ select:focus {
 
 .summary-cards {
     display: flex;
-    gap: 8px; /* Reduced gap to fit more cards */
+    gap: 10px; /* Slightly increased gap for better spacing */
     overflow-x: auto;
     height: 100%;
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
     flex: 1; /* Take available space */
+    padding-right: 2px; /* Minimal padding to prevent scrollbar issues */
 }
 
 .summary-card {
@@ -725,7 +726,7 @@ select:focus {
     border-radius: 6px;
     border-left: 4px solid var(--accent-primary);
     border: 1px solid var(--border-primary);
-    min-width: 180px; /* Reduced min-width */
+    min-width: 200px; /* Increased to better fill space */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -1392,9 +1393,9 @@ textarea:focus {
 }
 
 /* Ensure results table is visible in normal mode */
-.results-table-container {
-    display: flex;
-    opacity: 1;
+.right-panel:not(.show-all-clubs-mode) .results-table-container {
+    display: flex !important;
+    opacity: 1 !important;
     transition: opacity 0.3s ease;
 }
 
@@ -1403,6 +1404,13 @@ textarea:focus {
     height: auto;
     max-height: none;
     overflow: visible;
+}
+
+/* Ensure summary bar returns to normal size when not in show all clubs mode */
+.right-panel:not(.show-all-clubs-mode) .summary-bar {
+    height: 110px !important;
+    flex: none !important;
+    max-height: 110px !important;
 }
 
 .show-all-clubs-mode .summary-cards {
@@ -1499,13 +1507,16 @@ textarea:focus {
 }
 
 /* Ensure proper container spacing in all modes */
-.summary-cards:not(.show-all-clubs-mode) {
+.right-panel:not(.show-all-clubs-mode) .summary-cards {
     /* Normal horizontal scroll mode - ensure cards fit properly */
+    display: flex !important;
+    grid-template-columns: none !important;
     margin-right: 4px; /* Small margin to prevent touching right edge */
 }
 
-.summary-cards.show-all-clubs-mode {
+.right-panel.show-all-clubs-mode .summary-cards {
     /* Grid mode - ensure grid respects container boundaries */
+    display: grid !important;
     margin: 0;
     padding-right: 4px; /* Small padding to prevent touching right edge */
 }
