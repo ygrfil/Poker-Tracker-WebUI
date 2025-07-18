@@ -92,6 +92,7 @@ class PokerTracker {
             // Handle overall summary toggle
             const overallSummary = e.target.closest('.overall-summary.toggle-button');
             if (overallSummary) {
+                console.log('Overall summary clicked, current mode:', this.showAllClubsMode);
                 this.toggleShowAllClubs();
                 return;
             }

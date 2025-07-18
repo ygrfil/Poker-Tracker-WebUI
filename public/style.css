@@ -726,12 +726,19 @@ select:focus {
     border-radius: 6px;
     border-left: 4px solid var(--accent-primary);
     border: 1px solid var(--border-primary);
-    min-width: 200px; /* Increased to better fill space */
+    min-width: 160px; /* Reduced for better flexibility */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     box-sizing: border-box;
+}
+
+/* Dynamic sizing for normal mode cards */
+.right-panel:not(.show-all-clubs-mode) .summary-card {
+    flex: 1; /* Cards grow to fill available space */
+    min-width: 140px; /* Minimum size to maintain readability */
+    max-width: 280px; /* Maximum size to prevent cards from being too wide */
 }
 
 .summary-card.overall-summary {
@@ -1272,6 +1279,13 @@ textarea:focus {
     margin-bottom: 8px;
 }
 
+/* In show all clubs mode, ensure overall summary is prominent and clickable */
+.show-all-clubs-mode .overall-summary {
+    grid-column: 1 / -1 !important;
+    order: -1; /* Always show first */
+    margin-bottom: 12px !important;
+}
+
 /* Dynamic grid optimization based on club count */
 .summary-cards[data-club-count="1"] { grid-template-columns: 1fr; }
 .summary-cards[data-club-count="2"] { grid-template-columns: repeat(2, 1fr); }
@@ -1428,6 +1442,13 @@ textarea:focus {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Ensure overall summary maintains its appearance and functionality in show all clubs mode */
+.show-all-clubs-mode .overall-summary.toggle-button {
+    cursor: pointer !important;
+    position: relative;
+    z-index: 10;
+}
+
 .show-all-clubs-mode .summary-card h3 {
     font-size: var(--show-all-title-font);
     margin-bottom: 8px;
@@ -1445,6 +1466,7 @@ textarea:focus {
     position: relative;
     transition: all 0.3s ease;
     border: 2px solid transparent;
+    z-index: 10; /* Ensure it's clickable above other elements */
 }
 
 .overall-summary.toggle-button:hover {
@@ -1508,10 +1530,12 @@ textarea:focus {
 
 /* Ensure proper container spacing in all modes */
 .right-panel:not(.show-all-clubs-mode) .summary-cards {
-    /* Normal horizontal scroll mode - ensure cards fit properly */
+    /* Normal mode - fit complete cards only, no scrolling */
     display: flex !important;
     grid-template-columns: none !important;
     margin-right: 4px; /* Small margin to prevent touching right edge */
+    overflow-x: hidden !important; /* No horizontal scroll - only show complete cards */
+    flex-wrap: nowrap;
 }
 
 .right-panel.show-all-clubs-mode .summary-cards {
