@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 100%;
+    height: 50%; /* Reduced by 50% - club cards container now half height */
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
