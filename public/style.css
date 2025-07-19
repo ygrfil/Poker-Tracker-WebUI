@@ -558,7 +558,16 @@ select:focus {
 }
 
 .summary-bar {
-    display: none; /* Removed - let club cards exist without wrapper */
+    height: 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    overflow: hidden;
 }
 
 /* NEW WRAPPER FOR CLUB CARDS - CORRECT HEIGHT */
