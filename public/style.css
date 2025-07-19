@@ -558,7 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: 50px; /* Back to original height */
+    height: 35px; /* Reduced height to minimize space between club name and result */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
@@ -740,7 +740,7 @@ select:focus {
     min-width: 140px; /* Back to original minimum size */
     max-width: 280px; /* Back to original maximum size */
     padding: 4px 6px; /* Normal padding */
-    min-height: 30px; /* Let height be determined by container */
+    min-height: auto; /* Let height be determined by container */
     border-radius: 4px;
 }
 
@@ -1458,9 +1458,9 @@ textarea:focus {
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
-    height: 50px !important; /* Updated to match new height */
+    height: 35px !important; /* Updated to match new height */
     flex: none !important;
-    max-height: 50px !important;
+    max-height: 35px !important;
 }
 
 .show-all-clubs-mode .summary-cards {
