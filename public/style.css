@@ -1458,9 +1458,9 @@ textarea:focus {
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
-    height: 25px !important; /* Updated to match new height */
+    height: 40px !important; /* Match period-bar height */
     flex: none !important;
-    max-height: 25px !important;
+    max-height: 40px !important;
 }
 
 .show-all-clubs-mode .summary-cards {
