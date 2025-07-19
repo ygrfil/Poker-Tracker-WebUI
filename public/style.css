@@ -1490,6 +1490,9 @@ textarea:focus {
     overflow: visible;
     height: auto;
     padding: 12px 0;
+    align-items: start;
+    justify-items: start;
+    align-content: start;
 }
 
 .show-all-clubs-mode .summary-card:not(.overall-summary) {
