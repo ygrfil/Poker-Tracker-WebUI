@@ -558,16 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: 40px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    margin-bottom: 10px;
-    flex-shrink: 0;
+    display: none; /* Removed - let club cards exist without wrapper */
 }
 
 .results-table-container {
