@@ -89,10 +89,15 @@ class PokerTracker {
         
         // Event delegation for summary cards
         this.domCache.summaryCards.addEventListener('click', (e) => {
+            console.log('Click detected on:', e.target, 'Classes:', e.target.className);
+            
             // Handle overall summary toggle
             const overallSummary = e.target.closest('.overall-summary.toggle-button');
+            console.log('Overall summary found:', overallSummary);
             if (overallSummary) {
                 console.log('Overall summary clicked, current mode:', this.showAllClubsMode);
+                e.preventDefault();
+                e.stopPropagation();
                 this.toggleShowAllClubs();
                 return;
             }
@@ -912,6 +917,7 @@ class PokerTracker {
 
     toggleShowAllClubs() {
         // Toggle the show all clubs mode
+        console.log('Toggling from mode:', this.showAllClubsMode, 'to:', !this.showAllClubsMode);
         this.showAllClubsMode = !this.showAllClubsMode;
         
         const rightPanel = document.querySelector('.right-panel');
@@ -920,12 +926,22 @@ class PokerTracker {
         const resultsContainer = document.querySelector('.results-table-container');
         const summaryCards = this.domCache.summaryCards;
         
+        console.log('Elements found:', {
+            rightPanel: !!rightPanel,
+            overallSummary: !!overallSummary,
+            summaryBar: !!summaryBar,
+            resultsContainer: !!resultsContainer,
+            summaryCards: !!summaryCards
+        });
+        
         if (this.showAllClubsMode) {
+            console.log('Switching TO show all clubs mode');
             rightPanel.classList.add('show-all-clubs-mode');
             if (overallSummary) {
                 overallSummary.classList.add('active');
             }
         } else {
+            console.log('Switching BACK to normal mode');
             rightPanel.classList.remove('show-all-clubs-mode');
             if (overallSummary) {
                 overallSummary.classList.remove('active');
@@ -951,6 +967,9 @@ class PokerTracker {
                 summaryCards.style.overflow = '';
             }
         }
+        
+        console.log('Final state - showAllClubsMode:', this.showAllClubsMode);
+        console.log('Right panel classes:', rightPanel.className);
         
         // Save the new state
         this.saveViewModeState();
