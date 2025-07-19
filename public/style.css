@@ -558,12 +558,12 @@ select:focus {
 }
 
 .summary-bar {
-    height: auto; /* Let content determine height */
+    height: fit-content; /* Shrink container to match card content */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
     padding: 2px; /* Reduced padding to make container smaller */
-    margin-bottom: 2px;
+    margin-bottom: 8px;
     flex-shrink: 0;
     overflow: hidden;
     box-sizing: border-box;
