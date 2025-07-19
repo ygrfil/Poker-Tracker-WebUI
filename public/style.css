@@ -562,12 +562,12 @@ select:focus {
 }
 
 /* NEW WRAPPER FOR CLUB CARDS - CORRECT HEIGHT */
-.club-cards-wrapper {
-    height: 40px;
+.summary-bar.club-cards-wrapper {
+    height: 40px !important;
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
-    display: flex;
+    display: flex !important;
     align-items: center;
     padding: 0 16px;
     margin-bottom: 10px;
