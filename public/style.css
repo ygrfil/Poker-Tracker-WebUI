@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 60px; /* Reduced height to bring club cards closer together */
+    height: 30px; /* Reduced height to bring club cards closer together */
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
