@@ -558,7 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: 25px; /* Dramatically reduced height for clubs container */
+    height: auto; /* Let content determine height */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 17px;
+    height: auto;
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
@@ -1293,7 +1293,7 @@ textarea:focus {
 .summary-cards[data-layout-mode="hybrid-overflow"] .summary-card:not(.overall-summary),
 .summary-cards[data-layout-mode="compact-all"] .summary-card:not(.overall-summary) {
     padding: 6px;
-    min-height: 50px;
+    min-height: 20px;
 }
 
 .summary-cards[data-layout-mode="hybrid-overflow"] .summary-card h3,
@@ -1412,7 +1412,7 @@ textarea:focus {
 
 .overflow-club {
     padding: 6px;
-    min-height: 50px;
+    min-height: 20px;
 }
 
 .overflow-club h3 {
@@ -1607,7 +1607,7 @@ textarea:focus {
     
     .show-all-clubs-mode .summary-card:not(.overall-summary) {
         padding: 6px;
-        min-height: 50px;
+        min-height: 20px;
     }
 }
 
