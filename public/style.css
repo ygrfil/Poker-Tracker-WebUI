@@ -563,7 +563,7 @@ select:focus {
     border: 1px solid var(--border-primary);
     border-radius: 5px;
     padding: 2px; /* Reduced padding to make container smaller */
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     flex-shrink: 0;
     overflow: hidden;
     box-sizing: border-box;
