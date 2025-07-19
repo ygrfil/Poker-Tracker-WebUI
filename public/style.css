@@ -558,11 +558,11 @@ select:focus {
 }
 
 .summary-bar {
-    height: 50px; /* Normal height */
+    height: 35px; /* Reduced height - club cards will be less tall */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
-    padding: 4px; /* Normal padding */
+    padding: 2px; /* Reduced padding to fit in smaller height */
     margin-bottom: 8px;
     flex-shrink: 0;
     overflow: hidden;
@@ -734,33 +734,32 @@ select:focus {
     box-sizing: border-box;
 }
 
-/* Dynamic sizing for normal mode cards - reduce block width by half */
+/* Normal width sizing - back to original perfect width */
 .right-panel:not(.show-all-clubs-mode) .summary-card {
-    flex: 0 0 auto; /* Don't grow, use fixed width */
-    min-width: 70px; /* Half the original minimum size */
-    max-width: 140px; /* Half the original maximum size */
-    width: auto; /* Let content determine width within limits */
-    padding: 4px 6px; /* Back to normal padding */
-    min-height: auto; /* Let content determine height */
+    flex: 1; /* Cards grow to fill available space - back to original */
+    min-width: 140px; /* Back to original minimum size */
+    max-width: 280px; /* Back to original maximum size */
+    padding: 4px 6px; /* Normal padding */
+    min-height: auto; /* Let height be determined by container */
     border-radius: 4px;
 }
 
-/* Normal spacing and content - only block width is reduced */
+/* Compact vertical spacing to fit in reduced container height */
 .right-panel:not(.show-all-clubs-mode) .summary-card h3 {
     font-size: 0.9rem; /* Normal readable font size */
-    margin-bottom: 4px; /* Normal margin between title and stats */
-    line-height: 1.1;
+    margin-bottom: 2px; /* Reduced margin to be less tall */
+    line-height: 1;
     font-weight: 600;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat-value {
     font-size: 0.85rem; /* Normal readable font size */
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat {
-    padding: 4px 6px; /* Normal padding */
+    padding: 2px 6px; /* Reduced vertical padding to be less tall */
     min-width: 50px; /* Normal minimum width */
     background: var(--bg-card); /* Normal background */
     border: 1px solid var(--border-primary); /* Normal border */
@@ -794,10 +793,11 @@ select:focus {
     margin-top: 0px; /* No margin at top */
 }
 
-/* Normal spacing in normal mode */
+/* Compact vertical spacing to fit in reduced container height */
 .right-panel:not(.show-all-clubs-mode) .summary-stats {
     gap: 6px; /* Normal gap */
     margin-top: 0px; /* No margin at top */
+    margin-bottom: 0px; /* No margin at bottom */
     display: flex;
     justify-content: center;
 }
