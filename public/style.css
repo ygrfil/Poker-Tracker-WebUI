@@ -558,7 +558,17 @@ select:focus {
 }
 
 .summary-bar {
-    display: none; /* HIDDEN FOR TEST */
+    height: 40px; /* Same height as period-bar */
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 5px;
+    padding: 2px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .results-table-container {
