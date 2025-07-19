@@ -1572,8 +1572,6 @@ textarea:focus {
     margin-right: 4px; /* Small margin to prevent touching right edge */
     overflow-x: hidden !important; /* No horizontal scroll - only show complete cards */
     flex-wrap: nowrap;
-    height: 25px !important; /* Force club cards container to be small */
-    max-height: 25px !important; /* Ensure it doesn't grow */
 }
 
 .right-panel.show-all-clubs-mode .summary-cards {
