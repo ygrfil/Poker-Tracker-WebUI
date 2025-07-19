@@ -562,7 +562,7 @@ select:focus {
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
-    padding: 4px; /* Back to original padding */
+    padding: 2px; /* Reduced padding to make container smaller */
     margin-bottom: 8px;
     flex-shrink: 0;
     overflow: hidden;
@@ -713,7 +713,7 @@ select:focus {
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
     height: auto;
-    align-items: stretch;
+    align-items: flex-start;
     padding: 0;
     margin: 0; /* Remove any margin */
     flex: 1; /* Take available space */
