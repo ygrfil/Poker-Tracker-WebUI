@@ -558,11 +558,11 @@ select:focus {
 }
 
 .summary-bar {
-    height: 25px; /* 50% less than original 50px height */
+    height: 50px; /* Back to original height */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
-    padding: 1px; /* Minimal padding to fit in much smaller height */
+    padding: 4px; /* Back to original padding */
     margin-bottom: 8px;
     flex-shrink: 0;
     overflow: hidden;
@@ -1572,6 +1572,7 @@ textarea:focus {
     margin-right: 4px; /* Small margin to prevent touching right edge */
     overflow-x: hidden !important; /* No horizontal scroll - only show complete cards */
     flex-wrap: nowrap;
+    height: 50% !important; /* Reduce club cards container height by 50% */
 }
 
 .right-panel.show-all-clubs-mode .summary-cards {
