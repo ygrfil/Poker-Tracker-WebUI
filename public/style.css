@@ -558,17 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: 40px; /* Same height as period-bar above */
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
-    border-radius: 5px;
-    padding: 2px; /* Reduced padding to make container smaller */
-    margin-bottom: 8px;
-    flex-shrink: 0;
-    overflow: hidden;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    display: none; /* HIDDEN FOR TEST */
 }
 
 .results-table-container {
