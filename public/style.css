@@ -286,7 +286,7 @@ section h3 {
 
 .summary-card h3 {
     color: var(--text-primary);
-    margin-bottom: 15px;
+    margin-bottom: 6px;
     font-size: 1.2rem;
 }
 
@@ -775,7 +775,7 @@ select:focus {
 
 .summary-card h3 {
     color: var(--text-primary);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     font-size: var(--card-title-font);
     font-weight: 600;
     border: none;
@@ -1487,7 +1487,7 @@ textarea:focus {
 
 .show-all-clubs-mode .summary-card h3 {
     font-size: var(--show-all-title-font);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     line-height: 1.3;
 }
 
