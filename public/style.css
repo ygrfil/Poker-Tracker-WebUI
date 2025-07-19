@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 25px; /* Fixed small height for club cards container */
+    height: 100%; /* Back to 100% - specific rules will override */
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
@@ -1572,6 +1572,8 @@ textarea:focus {
     margin-right: 4px; /* Small margin to prevent touching right edge */
     overflow-x: hidden !important; /* No horizontal scroll - only show complete cards */
     flex-wrap: nowrap;
+    height: 25px !important; /* Force club cards container to be small */
+    max-height: 25px !important; /* Ensure it doesn't grow */
 }
 
 .right-panel.show-all-clubs-mode .summary-cards {
