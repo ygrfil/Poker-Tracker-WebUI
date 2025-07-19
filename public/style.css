@@ -558,14 +558,14 @@ select:focus {
 }
 
 .summary-bar {
-    height: 32px; /* Ultra-compact height to match card height */
+    height: 50px; /* Normal height */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
-    border-radius: 5px; /* Slightly larger border radius */
-    padding: 2px; /* Ultra-minimal padding */
-    margin-bottom: 8px; /* Reduced margin */
+    border-radius: 5px;
+    padding: 4px; /* Normal padding */
+    margin-bottom: 8px;
     flex-shrink: 0;
-    overflow: hidden; /* Ensure content stays within bounds */
+    overflow: hidden;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -734,42 +734,38 @@ select:focus {
     box-sizing: border-box;
 }
 
-/* Dynamic sizing for normal mode cards - compact spacing, normal text */
+/* Dynamic sizing for normal mode cards - reduce block width by half */
 .right-panel:not(.show-all-clubs-mode) .summary-card {
-    flex: 1; /* Cards grow to fill available space */
-    min-width: 140px; /* Back to readable minimum size */
-    max-width: 280px; /* Back to reasonable maximum size */
-    padding: 2px 3px; /* Ultra-minimal padding */
-    min-height: 28px; /* Very small fixed height */
-    max-height: 28px; /* Lock height to be very compact */
-    border-radius: 4px; /* Slightly larger border radius */
-    overflow: hidden; /* Ensure content fits */
+    flex: 0 0 auto; /* Don't grow, use fixed width */
+    min-width: 70px; /* Half the original minimum size */
+    max-width: 140px; /* Half the original maximum size */
+    width: auto; /* Let content determine width within limits */
+    padding: 4px 6px; /* Back to normal padding */
+    min-height: auto; /* Let content determine height */
+    border-radius: 4px;
 }
 
-/* Ultra-minimal spacing - eliminate all horizontal space */
+/* Normal spacing and content - only block width is reduced */
 .right-panel:not(.show-all-clubs-mode) .summary-card h3 {
-    font-size: 0.9rem; /* Keep normal readable font size */
-    margin-bottom: 0px; /* NO margin between title and stats */
-    line-height: 1;
+    font-size: 0.9rem; /* Normal readable font size */
+    margin-bottom: 4px; /* Normal margin between title and stats */
+    line-height: 1.1;
     font-weight: 600;
-    padding: 0; /* No padding at all */
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat-value {
-    font-size: 0.85rem; /* Keep normal readable font size */
+    font-size: 0.85rem; /* Normal readable font size */
     font-weight: 700;
-    line-height: 1;
-    padding: 0; /* No padding at all */
-    margin: 0; /* No margin at all */
+    line-height: 1.1;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat {
-    padding: 0px 1px; /* Absolutely minimal padding */
-    min-width: 30px; /* Much smaller minimum width */
-    margin: 0; /* No margin at all */
-    border: none; /* Remove border to save space */
-    background: transparent; /* Remove background */
-    border-radius: 0; /* Remove border radius */
+    padding: 4px 6px; /* Normal padding */
+    min-width: 50px; /* Normal minimum width */
+    background: var(--bg-card); /* Normal background */
+    border: 1px solid var(--border-primary); /* Normal border */
+    border-radius: 4px; /* Normal border radius */
+    text-align: center;
 }
 
 .summary-card.overall-summary {
@@ -798,12 +794,12 @@ select:focus {
     margin-top: 0px; /* No margin at top */
 }
 
-/* Remove extra spacing in normal mode */
+/* Normal spacing in normal mode */
 .right-panel:not(.show-all-clubs-mode) .summary-stats {
-    gap: 0px; /* NO gap at all */
-    margin-top: 0px; /* Absolutely no margin */
-    margin-bottom: 0px; /* No margin at bottom either */
-    padding: 0; /* No padding */
+    gap: 6px; /* Normal gap */
+    margin-top: 0px; /* No margin at top */
+    display: flex;
+    justify-content: center;
 }
 
 .stat {
