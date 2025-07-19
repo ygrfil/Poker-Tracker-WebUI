@@ -558,7 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: 43px !important;
+    height: 50px !important;
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
@@ -570,13 +570,13 @@ select:focus {
     flex-shrink: 0;
     overflow: hidden;
     box-sizing: border-box;
-    max-height: 43px !important;
-    min-height: 43px !important;
+    max-height: 50px !important;
+    min-height: 50px !important;
 }
 
 /* NEW WRAPPER FOR CLUB CARDS - CORRECT HEIGHT */
 .summary-bar.club-cards-wrapper {
-    height: 43px !important;
+    height: 50px !important;
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
@@ -729,8 +729,8 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: auto;
-    align-items: flex-start;
+    height: 100%;
+    align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
     flex: 1; /* Take available space */
@@ -1475,7 +1475,7 @@ textarea:focus {
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
-    height: 43px !important; /* Match period-bar height */
+    height: 50px !important; /* Match period-bar height */
     flex: none !important;
     max-height: 40px !important;
 }
