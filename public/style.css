@@ -558,12 +558,12 @@ select:focus {
 }
 
 .summary-bar {
-    height: 65px; /* Reduced from 110px (about 40% reduction) */
+    height: 35px; /* 70% reduction from original 110px */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    padding: 6px; /* Further reduced padding */
-    margin-bottom: 10px;
+    border-radius: 4px; /* Smaller border radius for compact size */
+    padding: 3px; /* Very compact padding */
+    margin-bottom: 8px; /* Reduced margin */
     flex-shrink: 0;
     overflow: hidden; /* Ensure content stays within bounds */
     box-sizing: border-box;
@@ -710,7 +710,7 @@ select:focus {
 
 .summary-cards {
     display: flex;
-    gap: 10px; /* Slightly increased gap for better spacing */
+    gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
     height: 100%;
     align-items: stretch;
@@ -734,25 +734,33 @@ select:focus {
     box-sizing: border-box;
 }
 
-/* Dynamic sizing for normal mode cards */
+/* Dynamic sizing for normal mode cards - very compact */
 .right-panel:not(.show-all-clubs-mode) .summary-card {
     flex: 1; /* Cards grow to fill available space */
-    min-width: 140px; /* Minimum size to maintain readability */
-    max-width: 280px; /* Maximum size to prevent cards from being too wide */
-    padding: 6px 8px; /* More compact padding for shorter cards */
-    min-height: 45px; /* Reduced height for more compact appearance */
+    min-width: 100px; /* Much smaller minimum size */
+    max-width: 200px; /* Reduced maximum size */
+    padding: 2px 4px; /* Very compact padding */
+    min-height: 25px; /* Very reduced height for ultra-compact appearance */
+    border-radius: 3px; /* Smaller border radius */
 }
 
-/* Compact font sizes for normal mode */
+/* Very compact font sizes for normal mode */
 .right-panel:not(.show-all-clubs-mode) .summary-card h3 {
-    font-size: 0.85rem; /* Smaller title font */
-    margin-bottom: 4px;
-    line-height: 1.1;
+    font-size: 0.7rem; /* Much smaller title font */
+    margin-bottom: 1px; /* Minimal margin */
+    line-height: 1;
+    font-weight: 600;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat-value {
-    font-size: 0.9rem; /* Smaller value font */
+    font-size: 0.75rem; /* Much smaller value font */
     font-weight: 700;
+    line-height: 1;
+}
+
+.right-panel:not(.show-all-clubs-mode) .stat {
+    padding: 1px 2px; /* Very compact stat padding */
+    min-width: 40px; /* Smaller stat containers */
 }
 
 .summary-card.overall-summary {
@@ -1436,9 +1444,9 @@ textarea:focus {
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
-    height: 65px !important; /* Updated to match new reduced height */
+    height: 35px !important; /* Updated to match new 70% reduced height */
     flex: none !important;
-    max-height: 65px !important;
+    max-height: 35px !important;
 }
 
 .show-all-clubs-mode .summary-cards {

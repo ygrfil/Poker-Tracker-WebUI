@@ -554,9 +554,12 @@ class PokerTracker {
         
         // Create hash for change detection
         const newHash = this.hashSummary(summary);
-        if (this.lastSummaryHash === newHash) {
+        if (this.lastSummaryHash === newHash && !this.forceRender) {
             return; // No changes, skip DOM update
         }
+        this.forceRender = false; // Reset force render flag
+        
+        console.log('Rendering summary, showAllClubsMode:', this.showAllClubsMode);
         
         if (summary.length === 0) {
             container.innerHTML = `
@@ -974,9 +977,15 @@ class PokerTracker {
         // Save the new state
         this.saveViewModeState();
         
+        // Force a complete re-render to ensure proper state
+        this.forceRender = true;
+        this.lastSummaryHash = null; // Force re-render
+        
         // Force a layout refresh
         setTimeout(() => {
             this.updateLayoutForCurrentMode();
+            // Also trigger a data reload to ensure proper rendering
+            this.loadData();
         }, 50); // Small delay to ensure CSS has been applied
     }
 
