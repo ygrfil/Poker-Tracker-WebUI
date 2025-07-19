@@ -558,11 +558,11 @@ select:focus {
 }
 
 .summary-bar {
-    height: 35px; /* 70% reduction from original 110px */
+    height: 50px; /* Increased to accommodate normal text sizes */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
-    border-radius: 4px; /* Smaller border radius for compact size */
-    padding: 3px; /* Very compact padding */
+    border-radius: 5px; /* Slightly larger border radius */
+    padding: 4px; /* Minimal padding */
     margin-bottom: 8px; /* Reduced margin */
     flex-shrink: 0;
     overflow: hidden; /* Ensure content stays within bounds */
@@ -734,33 +734,34 @@ select:focus {
     box-sizing: border-box;
 }
 
-/* Dynamic sizing for normal mode cards - very compact */
+/* Dynamic sizing for normal mode cards - compact spacing, normal text */
 .right-panel:not(.show-all-clubs-mode) .summary-card {
     flex: 1; /* Cards grow to fill available space */
-    min-width: 100px; /* Much smaller minimum size */
-    max-width: 200px; /* Reduced maximum size */
-    padding: 2px 4px; /* Very compact padding */
-    min-height: 25px; /* Very reduced height for ultra-compact appearance */
-    border-radius: 3px; /* Smaller border radius */
+    min-width: 140px; /* Back to readable minimum size */
+    max-width: 280px; /* Back to reasonable maximum size */
+    padding: 4px 6px; /* Minimal but readable padding */
+    min-height: auto; /* Let content determine height */
+    border-radius: 4px; /* Slightly larger border radius */
 }
 
-/* Very compact font sizes for normal mode */
+/* Minimal spacing between club name and result - keep normal font sizes */
 .right-panel:not(.show-all-clubs-mode) .summary-card h3 {
-    font-size: 0.7rem; /* Much smaller title font */
-    margin-bottom: 1px; /* Minimal margin */
-    line-height: 1;
+    font-size: 0.9rem; /* Back to normal readable font size */
+    margin-bottom: 0px; /* NO margin between title and stats */
+    line-height: 1.1;
     font-weight: 600;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat-value {
-    font-size: 0.75rem; /* Much smaller value font */
+    font-size: 0.85rem; /* Back to normal readable font size */
     font-weight: 700;
     line-height: 1;
 }
 
 .right-panel:not(.show-all-clubs-mode) .stat {
-    padding: 1px 2px; /* Very compact stat padding */
-    min-width: 40px; /* Smaller stat containers */
+    padding: 2px 4px; /* Minimal padding around result */
+    min-width: 60px; /* Reasonable minimum width */
+    margin-top: 0px; /* No gap between title and result */
 }
 
 .summary-card.overall-summary {
@@ -784,8 +785,15 @@ select:focus {
 
 .summary-stats {
     display: flex;
-    gap: 8px;
+    gap: 6px; /* Slightly reduced gap */
     justify-content: center;
+    margin-top: 0px; /* No margin at top */
+}
+
+/* Remove extra spacing in normal mode */
+.right-panel:not(.show-all-clubs-mode) .summary-stats {
+    gap: 4px; /* Even smaller gap in normal mode */
+    margin-top: 0px; /* Absolutely no margin */
 }
 
 .stat {
@@ -1444,9 +1452,9 @@ textarea:focus {
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
-    height: 35px !important; /* Updated to match new 70% reduced height */
+    height: 50px !important; /* Updated to match new height */
     flex: none !important;
-    max-height: 35px !important;
+    max-height: 50px !important;
 }
 
 .show-all-clubs-mode .summary-cards {
