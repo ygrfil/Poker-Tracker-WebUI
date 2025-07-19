@@ -286,7 +286,7 @@ section h3 {
 
 .summary-card h3 {
     color: var(--text-primary);
-    margin-bottom: 6px;
+    margin-bottom: 15px;
     font-size: 1.2rem;
 }
 
@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 100%; /* Back to 100% - specific rules will override */
+    height: 60px; /* Reduced height to bring club cards closer together */
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
@@ -775,7 +775,7 @@ select:focus {
 
 .summary-card h3 {
     color: var(--text-primary);
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     font-size: var(--card-title-font);
     font-weight: 600;
     border: none;
@@ -1487,7 +1487,7 @@ textarea:focus {
 
 .show-all-clubs-mode .summary-card h3 {
     font-size: var(--show-all-title-font);
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     line-height: 1.3;
 }
 
