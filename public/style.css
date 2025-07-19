@@ -558,11 +558,11 @@ select:focus {
 }
 
 .summary-bar {
-    height: 35px; /* Reduced height - club cards will be less tall */
+    height: 25px; /* 50% less than original 50px height */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
-    padding: 2px; /* Reduced padding to fit in smaller height */
+    padding: 1px; /* Minimal padding to fit in much smaller height */
     margin-bottom: 8px;
     flex-shrink: 0;
     overflow: hidden;
@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 50%; /* Reduced by 50% - club cards container now half height */
+    height: 100%; /* Back to 100% to fill the reduced summary-bar */
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
