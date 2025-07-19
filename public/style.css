@@ -712,7 +712,7 @@ select:focus {
     display: flex;
     gap: 6px; /* Reduced gap for more compact layout */
     overflow-x: auto;
-    height: 30px; /* Reduced height to bring club cards closer together */
+    height: 60px;
     align-items: stretch;
     padding: 0;
     margin: 0; /* Remove any margin */
@@ -740,7 +740,7 @@ select:focus {
     min-width: 140px; /* Back to original minimum size */
     max-width: 280px; /* Back to original maximum size */
     padding: 4px 6px; /* Normal padding */
-    min-height: auto; /* Let height be determined by container */
+    min-height: 30px; /* Let height be determined by container */
     border-radius: 4px;
 }
 
