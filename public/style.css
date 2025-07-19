@@ -1572,7 +1572,7 @@ textarea:focus {
     margin-right: 4px; /* Small margin to prevent touching right edge */
     overflow-x: hidden !important; /* No horizontal scroll - only show complete cards */
     flex-wrap: nowrap;
-    height: 50% !important; /* Reduce club cards container height by 50% */
+    height: 25px !important; /* Fixed pixel height - much smaller club cards container */
 }
 
 .right-panel.show-all-clubs-mode .summary-cards {
