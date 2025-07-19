@@ -558,7 +558,7 @@ select:focus {
 }
 
 .summary-bar {
-    height: fit-content; /* Shrink container to match card content */
+    height: 40px; /* Same height as period-bar above */
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 5px;
