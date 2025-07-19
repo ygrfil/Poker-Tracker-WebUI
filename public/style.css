@@ -1467,17 +1467,18 @@ textarea:focus {
 }
 
 .show-all-clubs-mode .summary-bar {
-    flex: 1;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    flex: 1 !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: auto !important;
+    overflow: visible !important;
 }
 
 /* Ensure summary bar returns to normal size when not in show all clubs mode */
 .right-panel:not(.show-all-clubs-mode) .summary-bar {
     height: 50px !important; /* Match period-bar height */
     flex: none !important;
-    max-height: 40px !important;
+    max-height: 50px !important;
 }
 
 .show-all-clubs-mode .summary-cards {
