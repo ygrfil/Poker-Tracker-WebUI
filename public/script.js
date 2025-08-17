@@ -652,7 +652,8 @@ class PokerTracker {
         
         // Set data attributes for responsive CSS
         container.setAttribute('data-period', this.currentPeriod);
-        container.setAttribute('data-club-count', Math.min(summary.length, 6));
+        container.setAttribute('data-club-count', summary.length);
+        this.lastClubCount = summary.length;
         
         // Optimize layout for all views with smart club management
         this.optimizeLayoutForPeriod(container, summary.length);
@@ -1012,18 +1013,21 @@ class PokerTracker {
         
         console.log('Final state - showAllClubsMode:', this.showAllClubsMode);
         console.log('Right panel classes:', rightPanel.className);
-        
+
         // Save the new state
         this.saveViewModeState();
-        
+
         // Force a complete re-render to ensure proper state
         this.forceRender = true;
         this.lastSummaryHash = null; // Force re-render
-        
-        // Force a layout refresh
+
+        // Cancel any in-flight data request to avoid race when toggling quickly
+        this.activeRequestId = Date.now();
+
+        // Force a layout refresh and re-render using existing data first
         setTimeout(() => {
             this.updateLayoutForCurrentMode();
-            // Also trigger a data reload to ensure proper rendering
+            // Then trigger a data reload to ensure proper rendering
             this.loadData();
         }, 50); // Small delay to ensure CSS has been applied
     }
@@ -1031,7 +1035,7 @@ class PokerTracker {
     updateLayoutForCurrentMode() {
         // Re-optimize layout for current mode without reloading data
         const container = this.domCache.summaryCards;
-        const clubCount = parseInt(container.getAttribute('data-club-count') || 0);
+        const clubCount = this.lastClubCount ?? parseInt(container.getAttribute('data-club-count') || 0);
         
         if (clubCount > 0) {
             // Update layout mode attribute for CSS targeting
