@@ -445,6 +445,10 @@ class PokerTracker {
     }
 
     async loadData() {
+        // Generate a request id to ignore out-of-order responses
+        const requestId = Date.now();
+        this.activeRequestId = requestId;
+
         // Show loading states without DOM restructuring
         this.setLoadingState(true);
         
@@ -456,12 +460,17 @@ class PokerTracker {
                 weekStartDay: this.settings.weekStartDay
             });
             
-            // Consolidate to 2 API calls instead of 3
+            // Consolidate to 2 API calls instead of 3 with robust fetch handling and no-store cache
             const [results, summary] = await Promise.all([
-                fetch(`/api/results?${params}`).then(r => r.json()),
-                fetch(`/api/summary?${params}`).then(r => r.json())
+                this.fetchJSON(`/api/results?${params}`),
+                this.fetchJSON(`/api/summary?${params}`)
             ]);
             
+            // Ignore stale responses
+            if (this.activeRequestId !== requestId) {
+                return;
+            }
+
             // Render data
             this.renderResults(results);
             this.renderSummary(summary);
@@ -471,11 +480,27 @@ class PokerTracker {
             
         } catch (error) {
             console.error('Error loading data:', error);
-            this.showNotification('Error loading data', 'error');
+            this.showNotification('Error loading data. Please try again.', 'error');
         } finally {
-            // Hide loading with smooth transition
-            this.setLoadingState(false);
+            // Hide loading with smooth transition only if this is the latest request
+            if (this.activeRequestId === requestId) {
+                this.setLoadingState(false);
+            }
         }
+    }
+
+    async fetchJSON(url) {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`HTTP ${response.status} for ${url}: ${text}`);
+        }
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await response.text().catch(() => '');
+            throw new Error(`Non-JSON response for ${url}: ${text.slice(0, 200)}`);
+        }
+        return response.json();
     }
 
     setLoadingState(isLoading) {
