@@ -612,7 +612,7 @@ select:focus {
 .results-table-body {
     flex: 1;
     overflow-y: auto;
-    max-height: 400px;
+    /* Allow body to grow with window; no arbitrary max-height cap */
 }
 
 .result-row {
@@ -1451,9 +1451,6 @@ textarea:focus {
 }
 
 /* Show All Clubs Mode Styles */
-.show-all-clubs-mode {
-    /* Hide results table when in show all clubs mode */
-}
 
 .show-all-clubs-mode .results-table-container {
     display: none !important;

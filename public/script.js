@@ -488,7 +488,8 @@ class PokerTracker {
 
     renderResults(results) {
         const container = this.domCache.resultsList;
-        const newResults = results.slice(0, 12);
+        // Show all results for the selected period; scrolling is handled by CSS
+        const newResults = results;
         
         // Create hash for change detection
         const newHash = this.hashResults(newResults);
