@@ -521,6 +521,9 @@ class PokerTracker {
             summaryContent.classList.remove('loading');
             resultsContent.classList.remove('loading');
         }
+
+        // Track loading state to debounce UI interactions
+        this.isLoading = isLoading;
     }
 
 
@@ -959,6 +962,10 @@ class PokerTracker {
     }
 
     toggleShowAllClubs() {
+        // Prevent re-entrant toggles while loading or animating
+        if (this.isLoading || this.isTogglingView) return;
+        this.isTogglingView = true;
+
         // Toggle the show all clubs mode
         console.log('Toggling from mode:', this.showAllClubsMode, 'to:', !this.showAllClubsMode);
         this.showAllClubsMode = !this.showAllClubsMode;
@@ -1028,7 +1035,10 @@ class PokerTracker {
         setTimeout(() => {
             this.updateLayoutForCurrentMode();
             // Then trigger a data reload to ensure proper rendering
-            this.loadData();
+            this.loadData().finally(() => {
+                // Allow toggling again after layout/data settle
+                setTimeout(() => { this.isTogglingView = false; }, 50);
+            });
         }, 50); // Small delay to ensure CSS has been applied
     }
 

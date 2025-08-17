@@ -1066,6 +1066,7 @@ select:focus {
     justify-content: center;
     opacity: 0;
     transition: opacity 0.2s ease;
+    /* Keep overlays non-blocking so clicks still reach toggles */
     pointer-events: none;
     z-index: 10;
 }
@@ -1544,6 +1545,11 @@ textarea:focus {
 .overall-summary.toggle-button.active::after {
     transform: rotate(180deg);
     border-top-color: var(--accent-primary);
+}
+
+/* Ensure the overall summary remains positioned and clickable even when layout shifts */
+.overall-summary.toggle-button {
+    z-index: 2;
 }
 
 .overall-summary.toggle-button .summary-stats {
