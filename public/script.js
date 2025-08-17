@@ -17,7 +17,8 @@ class PokerTracker {
         this.cacheDOMElements();
         this.setupEventListeners();
         this.setCurrentDateTime();
-        this.setFilterDate();
+        // Use Add Result datetime as the period anchor
+        this.syncCurrentDateFromInput();
         this.updatePeriodDisplay();
         this.initializeViewMode(); // Initialize view mode state
         this.loadData();
@@ -38,7 +39,7 @@ class PokerTracker {
             editModal: document.getElementById('editModal'),
             settingsModal: document.getElementById('settingsModal'),
             commissionModal: document.getElementById('commissionModal'),
-            filterDate: document.getElementById('filterDate'),
+            dateTime: document.getElementById('dateTime'),
             summaryLoadingOverlay: document.getElementById('summaryLoadingOverlay'),
             resultsLoadingOverlay: document.getElementById('resultsLoadingOverlay')
         };
@@ -48,7 +49,8 @@ class PokerTracker {
         // Use cached DOM elements for better performance
         this.domCache.resultForm.addEventListener('submit', this.handleAddResult.bind(this));
         this.domCache.editForm.addEventListener('submit', this.handleEditResult.bind(this));
-        this.domCache.filterDate.addEventListener('change', this.handleDateFilter.bind(this));
+        // When Add Result datetime changes, use it as the filter anchor
+        this.domCache.dateTime.addEventListener('change', this.handleDateTimeFilter.bind(this));
         
         // Form auto-focus flow
         this.setupFormAutoFocus();
@@ -313,8 +315,13 @@ class PokerTracker {
         document.getElementById('dateTime').value = localDateTime.toISOString().slice(0, 16);
     }
 
-    setFilterDate() {
-        document.getElementById('filterDate').value = this.currentDate;
+    syncCurrentDateFromInput() {
+        const input = this.domCache.dateTime;
+        if (input && input.value) {
+            // Take only the date portion
+            const datePart = input.value.split('T')[0];
+            if (datePart) this.currentDate = datePart;
+        }
     }
 
     async handleAddResult(e) {
@@ -412,12 +419,18 @@ class PokerTracker {
         }
     }
 
-    handleDateFilter(e) {
-        this.currentDate = e.target.value;
-        this.autocompleteCache = null; // Invalidate cache on date change
-        this.lastResultsHash = null; // Invalidate DOM cache
-        this.lastSummaryHash = null; // Invalidate DOM cache
-        this.loadData();
+    handleDateTimeFilter(e) {
+        // Update currentDate from Add Result datetime input
+        const value = e.target.value;
+        const datePart = value ? value.split('T')[0] : null;
+        if (datePart) {
+            this.currentDate = datePart;
+            this.autocompleteCache = null;
+            this.lastResultsHash = null;
+            this.lastSummaryHash = null;
+            this.updatePeriodDisplay();
+            this.loadData();
+        }
     }
 
     handlePeriodFilter(e) {
@@ -1398,7 +1411,12 @@ class PokerTracker {
         this.autocompleteCache = null; // Invalidate cache on navigation
         this.lastResultsHash = null; // Invalidate DOM cache
         this.lastSummaryHash = null; // Invalidate DOM cache
-        document.getElementById('filterDate').value = this.currentDate;
+        // Reflect the navigated date back into the Add Result datetime input (preserve time)
+        const dateTimeInput = this.domCache.dateTime;
+        if (dateTimeInput) {
+            const timePart = (dateTimeInput.value && dateTimeInput.value.split('T')[1]) || '00:00';
+            dateTimeInput.value = `${this.currentDate}T${timePart}`;
+        }
         this.loadData();
         this.updatePeriodDisplay();
     }

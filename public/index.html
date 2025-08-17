@@ -17,7 +17,10 @@
         <main class="main">
             <div class="left-panel">
                 <section class="add-result-section">
-                    <h3>Add Result</h3>
+                    <div class="settings-header">
+                        <h3>Add Result</h3>
+                        <button id="settingsBtn" class="btn-settings" title="Settings">⚙️</button>
+                    </div>
                     <form id="resultForm" class="result-form">
                         <div class="form-group">
                             <label for="clubName">Club</label>
@@ -39,18 +42,7 @@
                     </form>
                 </section>
 
-                <section class="settings-section">
-                    <div class="settings-header">
-                        <h3>Settings</h3>
-                        <button id="settingsBtn" class="btn-settings" title="Settings">⚙️</button>
-                    </div>
-                    <div class="quick-filters">
-                        <div class="filter-group">
-                            <label for="filterDate">Jump to Date</label>
-                            <input type="date" id="filterDate" name="filterDate">
-                        </div>
-                    </div>
-                </section>
+                
             </div>
 
             <div class="right-panel">
